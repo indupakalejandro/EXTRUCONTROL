@@ -756,11 +756,11 @@ function renderHistorial(){
     </tr>`).join('');
   }
 
-  const last30=[...(db||[])].sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(-30);
+  const last30=[...fil].sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(-30);
   const ctx=document.getElementById('chartH');if(!ctx)return;
   if(chartH)chartH.destroy();
   chartH=new Chart(ctx,{type:'line',
-    data:{labels:last30.map(r=>r.fecha.slice(5)),
+    data:{labels:last30.map(r=>r.fecha.slice(5)+' '+r.hora.slice(0,5)),
       datasets:[
         {label:'N·m',data:last30.map(r=>r.nm),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5},
         {label:'Amp',data:last30.map(r=>r.amp),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5,yAxisID:'y2'}
