@@ -887,6 +887,18 @@ async function sugerirConIA(){
 
   const prompt=`Sos un experto en extrusoras de soplado de film plástico. Analizá el historial de registros de producción y sugerí parámetros para la combinación pedida.
 
+CONTEXTO IMPORTANTE — PARÁMETROS AJUSTABLES vs MEDIDOS:
+Los únicos parámetros que el operario puede AJUSTAR en la máquina son:
+  - Hz (velocidad del motor)
+  - Tren de tiro (velocidad del tren)
+  - Turbina
+  - Temperaturas de tablero (mínima y máxima)
+  - Temperaturas de matriz (mínima y máxima)
+El caudal (kg/h), los N·m y el Amp son CONSECUENCIAS del ajuste — se miden para seguimiento pero NO se ajustan. Por lo tanto:
+  - En el JSON debés sugerir valores para los parámetros ajustables.
+  - Para nm, amp y caudal, incluí el valor ESPERADO según el historial (no como algo a setear).
+  - En el razonamiento NUNCA digas "ajustá el caudal" ni "subí el Amp" — esos son resultados, no mandos.
+
 HISTORIAL DE REGISTROS (últimos ${sample.length}):
 ${histResumen}
 
@@ -896,22 +908,23 @@ CONSULTA:
 - Material: ${mat||'no especificado'}
 - Extrusora preferida: ${extB?'N°'+extB:'sin preferencia'}
 - Temperatura ambiente actual (Junín, BA): ${climaActual?.temp??'desconocida'} °C
+- Tener en cuenta que la temperatura ambiente afecta los N·m: más frío → material más viscoso → N·m más alto.
 
 Respondé SOLO con un JSON válido (sin markdown, sin texto extra) con esta estructura:
 {
   "extrusora": 2,
   "hz": 0,
-  "nm": 0,
-  "amp": 0,
-  "caudal": 0,
   "turbina": 0,
   "trenTiro": 0,
   "tableroMin": 0,
   "tableroMax": 0,
   "matrizMin": 0,
   "matrizMax": 0,
+  "nm_esperado": 0,
+  "amp_esperado": 0,
+  "caudal_esperado": 0,
   "confianza": "alta|media|baja",
-  "razonamiento": "explicación breve en español de cómo llegaste a estos valores"
+  "razonamiento": "explicación breve en español: qué ajustar (Hz, tren, turbina, temperaturas) y por qué. Mencioná los N·m, Amp y caudal como valores esperados/resultantes, nunca como algo a ajustar."
 }`;
 
   try{
@@ -924,8 +937,8 @@ Respondé SOLO con un JSON válido (sin markdown, sin texto extra) con esta estr
 
     const confColor={alta:'var(--green)',media:'var(--yellow)',baja:'var(--orange)'}[params.confianza]||'var(--text2)';
     const synth=[{
-      velocidadHz:params.hz,nm:params.nm,amp:params.amp,
-      caudal:params.caudal,turbina:params.turbina,trenTiro:params.trenTiro,
+      velocidadHz:params.hz,nm:params.nm_esperado,amp:params.amp_esperado,
+      caudal:params.caudal_esperado,turbina:params.turbina,trenTiro:params.trenTiro,
       tableroMin:params.tableroMin,tableroMax:params.tableroMax,
       matrizMin:params.matrizMin,matrizMax:params.matrizMax,
       extrusora:params.extrusora,tempClima:climaActual?.temp||20,
@@ -935,18 +948,22 @@ Respondé SOLO con un JSON válido (sin markdown, sin texto extra) con esta estr
     resEl.innerHTML=`
       <div class="ai-block">
         <h3>✦ Sugerencia de IA <span style="font-size:10px;font-family:var(--mono);color:${confColor};margin-left:6px">confianza: ${params.confianza}</span></h3>
+        <div style="font-size:9px;color:rgba(196,181,253,.5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Parámetros a setear en la máquina</div>
         <div class="ai-param-grid">
           <div class="ai-param"><div class="ai-param-name">Extrusora</div><div class="ai-param-val">N°${params.extrusora}</div></div>
-          <div class="ai-param"><div class="ai-param-name">Hz motor</div><div class="ai-param-val">${params.hz}</div></div>
-          <div class="ai-param"><div class="ai-param-name">N·m</div><div class="ai-param-val">${params.nm}</div></div>
-          <div class="ai-param"><div class="ai-param-name">Amp</div><div class="ai-param-val">${params.amp}</div><div class="ai-param-unit">A</div></div>
-          <div class="ai-param"><div class="ai-param-name">Caudal</div><div class="ai-param-val">${params.caudal}</div><div class="ai-param-unit">kg/h</div></div>
+          <div class="ai-param"><div class="ai-param-name">Hz motor</div><div class="ai-param-val">${params.hz}</div><div class="ai-param-unit">Hz</div></div>
           <div class="ai-param"><div class="ai-param-name">Turbina</div><div class="ai-param-val">${params.turbina}</div><div class="ai-param-unit">/50</div></div>
           <div class="ai-param"><div class="ai-param-name">Tren de tiro</div><div class="ai-param-val">${params.trenTiro}</div></div>
           <div class="ai-param"><div class="ai-param-name">Tablero</div><div class="ai-param-val">${params.tableroMin}–${params.tableroMax}</div><div class="ai-param-unit">°C</div></div>
           <div class="ai-param"><div class="ai-param-name">Matriz</div><div class="ai-param-val">${params.matrizMin}–${params.matrizMax}</div><div class="ai-param-unit">°C</div></div>
         </div>
-        <div class="ai-reasoning"><strong style="color:#c4b5fd;font-size:10px;letter-spacing:.5px;text-transform:uppercase">Razonamiento de la IA:</strong><br>${params.razonamiento}</div>
+        <div style="font-size:9px;color:rgba(196,181,253,.4);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;padding-top:10px;border-top:1px solid rgba(167,139,250,.1)">Valores esperados como resultado (no se ajustan)</div>
+        <div class="ai-param-grid">
+          <div class="ai-param" style="opacity:.7"><div class="ai-param-name">N·m esperado</div><div class="ai-param-val">${params.nm_esperado}</div><div class="ai-param-unit">N·m</div></div>
+          <div class="ai-param" style="opacity:.7"><div class="ai-param-name">Amp esperado</div><div class="ai-param-val">${params.amp_esperado}</div><div class="ai-param-unit">A</div></div>
+          <div class="ai-param" style="opacity:.7"><div class="ai-param-name">Caudal esperado</div><div class="ai-param-val">${params.caudal_esperado}</div><div class="ai-param-unit">kg/h</div></div>
+        </div>
+        <div class="ai-reasoning" style="margin-top:12px"><strong style="color:#c4b5fd;font-size:10px;letter-spacing:.5px;text-transform:uppercase">Razonamiento:</strong><br>${params.razonamiento}</div>
       </div>
     `+buildResultHTML(synth,ancho,esp,mat,extB,false,true);
   }catch(e){
