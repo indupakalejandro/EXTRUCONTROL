@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExtruControl v3</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0b0c0f;--bg2:#13141a;--bg3:#1a1c25;--bg4:#21232e;
+  --border:rgba(255,255,255,0.07);--bd2:rgba(255,255,255,0.13);
+  --text:#dde0ef;--text2:#7c809a;--text3:#44475a;
+  --accent:#4f8ef7;--acc2:#2563eb;
+  --green:#34d399;--yellow:#fbbf24;--red:#f87171;--orange:#fb923c;
+  --ext2:#a78bfa;--ext3:#38bdf8;
+  --mono:'DM Mono',monospace;--head:'Syne',sans-serif;
+  --r:10px;--rsm:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--mono);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;line-height:1.6}
+::placeholder{color:var(--text3)}
+input[type=number]{-moz-appearance:textfield}
+input[type=number]::-webkit-inner-spin-button{display:none}
+
+/* HEADER */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:200}
+.logo{font-family:var(--head);font-size:16px;font-weight:700;letter-spacing:-.5px;white-space:nowrap}
+.logo em{color:var(--accent);font-style:normal}
+nav{display:flex;gap:2px;flex-wrap:wrap}
+nav button{background:none;border:none;color:var(--text2);font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .15s;white-space:nowrap}
+nav button:hover{background:var(--bg3);color:var(--text)}
+nav button.active{background:rgba(79,142,247,.15);color:var(--accent)}
+#clima-badge{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;color:var(--text2);white-space:nowrap}
+#clima-badge .tv{color:var(--text);font-weight:500}
+
+/* LAYOUT */
+main{max-width:1160px;margin:0 auto;padding:24px 20px}
+.page{display:none}.page.active{display:block}
+.page-hd{margin-bottom:20px}
+.page-hd h1{font-family:var(--head);font-size:20px;font-weight:700;letter-spacing:-.3px;margin-bottom:2px}
+.page-hd p{font-size:11px;color:var(--text2)}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.g5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+@media(max-width:760px){.g2,.g3,.g4,.g5{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.g2,.g3,.g4,.g5{grid-template-columns:1fr}}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-bottom:12px}
+.card-title{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--text3);margin-bottom:12px}
+
+/* FORM */
+.field{margin-bottom:11px}
+.field label{display:block;font-size:11px;color:var(--text2);margin-bottom:3px}
+.field label .u{color:var(--text3);font-size:10px}
+.field input,.field select,.field textarea{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);color:var(--text);font-family:var(--mono);font-size:13px;padding:7px 10px;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field select option{background:var(--bg3)}
+.field input[readonly]{color:var(--text2)}
+.field textarea{resize:vertical;min-height:60px}
+.sec-lbl{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;color:var(--accent);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* EXTRUSORA SELECTOR */
+.ext-sel{display:flex;gap:10px;margin-bottom:14px}
+.ext-btn{flex:1;padding:10px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .2s;text-align:center}
+.ext-btn .num{font-family:var(--head);font-size:26px;font-weight:700;line-height:1}
+.ext-btn .lbl{font-size:9px;color:var(--text2);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+.ext-btn.sel-2{border-color:var(--ext2);background:rgba(167,139,250,.08)}.ext-btn.sel-2 .num{color:var(--ext2)}
+.ext-btn.sel-3{border-color:var(--ext3);background:rgba(56,189,248,.08)}.ext-btn.sel-3 .num{color:var(--ext3)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;border-radius:var(--rsm);border:none;font-family:var(--mono);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--acc2)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{color:var(--text);border-color:var(--bd2)}
+.btn-danger{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.btn-ai{background:linear-gradient(135deg,rgba(167,139,250,.2),rgba(79,142,247,.2));color:#c4b5fd;border:1px solid rgba(167,139,250,.3)}.btn-ai:hover{border-color:rgba(167,139,250,.5)}
+.btn-row{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+
+/* STATS */
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px}
+.stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:500;line-height:1.1}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* BADGE */
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500}
+.b-green{background:rgba(52,211,153,.12);color:var(--green)}
+.b-yellow{background:rgba(251,191,36,.12);color:var(--yellow)}
+.b-red{background:rgba(248,113,113,.12);color:var(--red)}
+.b-ext2{background:rgba(167,139,250,.15);color:var(--ext2)}
+.b-ext3{background:rgba(56,189,248,.15);color:var(--ext3)}
+.b-ai{background:rgba(167,139,250,.15);color:#c4b5fd}
+
+/* ALERTS */
+.alert{border-radius:var(--r);padding:11px 14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px;border:1px solid}
+.alert-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.alert-title{font-weight:500;font-size:12px;margin-bottom:1px;font-family:var(--head)}
+.alert-msg{font-size:11px;opacity:.75;line-height:1.5}
+.al-red{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.25);color:var(--red)}
+.al-yellow{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.25);color:var(--yellow)}
+.al-green{background:rgba(52,211,153,.07);border-color:rgba(52,211,153,.25);color:var(--green)}
+.al-blue{background:rgba(79,142,247,.07);border-color:rgba(79,142,247,.25);color:var(--accent)}
+.al-purple{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.25);color:#c4b5fd}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead tr{border-bottom:1px solid var(--border)}
+th{text-align:left;padding:6px 9px;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--text3);font-weight:400}
+td{padding:7px 9px;border-bottom:1px solid rgba(255,255,255,.03);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+
+/* RESULT BLOCK */
+.res-block{background:var(--bg3);border:1px solid var(--bd2);border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.res-hd{padding:11px 16px;background:rgba(79,142,247,.09);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.res-title{font-family:var(--head);font-size:13px;font-weight:700;color:var(--accent)}
+.param-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.pi{padding:10px 13px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.pi-name{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.pi-val{font-size:16px;font-weight:500;line-height:1.2}
+.pi-unit{font-size:9px;color:var(--text3)}
+
+/* AI RESULT */
+.ai-block{background:rgba(167,139,250,.05);border:1px solid rgba(167,139,250,.2);border-radius:var(--r);padding:16px 20px;margin-bottom:12px}
+.ai-block h3{font-family:var(--head);font-size:13px;color:#c4b5fd;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ai-block .ai-param-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.ai-param{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.15);border-radius:var(--rsm);padding:8px 11px}
+.ai-param-name{font-size:9px;color:rgba(196,181,253,.6);text-transform:uppercase;letter-spacing:.6px;margin-bottom:2px}
+.ai-param-val{font-size:15px;font-weight:500;color:#c4b5fd}
+.ai-param-unit{font-size:9px;color:rgba(196,181,253,.5)}
+.ai-reasoning{font-size:11px;color:var(--text2);line-height:1.7;background:var(--bg3);border-radius:var(--rsm);padding:10px 13px;border:1px solid var(--border)}
+
+/* PROGRESS BAR */
+.pb-bg{background:var(--bg4);border-radius:4px;height:5px;margin-top:4px;overflow:hidden}
+.pb{height:5px;border-radius:4px;transition:width .5s}
+.pb-wrap{margin-bottom:10px}
+.pb-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:3px}
+
+/* CHART */
+.chart-box{position:relative;width:100%;height:200px}
+
+/* ALARM OVERLAY */
+#alarm-overlay{
+  position:fixed;inset:0;background:rgba(11,12,15,.92);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#alarm-overlay.show{opacity:1;pointer-events:all}
+.alarm-box{
+  background:var(--bg2);border-radius:14px;padding:32px 40px;max-width:440px;
+  text-align:center;border:1px solid var(--border);
+  animation:pulse-border 1.5s ease-in-out infinite;
+}
+@keyframes pulse-border{0%,100%{border-color:var(--border)}50%{border-color:var(--red)}}
+.alarm-icon{font-size:40px;margin-bottom:12px}
+.alarm-title{font-family:var(--head);font-size:18px;font-weight:700;margin-bottom:6px}
+.alarm-msg{font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+.alarm-ext-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:6px;margin-bottom:14px}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:rgba(11,12,15,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:11px;transition:opacity .3s}
+#loader.hidden{opacity:0;pointer-events:none}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loader-msg{font-size:11px;color:var(--text2)}
+
+/* SNACK */
+#snack{position:fixed;bottom:20px;right:20px;background:var(--bg2);border:1px solid var(--bd2);border-radius:var(--r);padding:9px 15px;font-size:12px;z-index:999;transform:translateY(50px);opacity:0;transition:all .25s;max-width:280px;line-height:1.4}
+#snack.show{transform:translateY(0);opacity:1}
+
+/* CFG WARNING */
+#cfg-warning{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:13px 17px;margin-bottom:16px;font-size:11px;color:var(--yellow);line-height:1.7}
+#cfg-warning strong{font-family:var(--head);display:block;margin-bottom:3px}
+
+/* AI LOADING */
+.ai-loading{display:flex;align-items:center;gap:10px;padding:16px;color:var(--text2);font-size:12px}
+.ai-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c4b5fd;animation:dot-pulse 1.4s ease-in-out infinite}
+.ai-dots span:nth-child(2){animation-delay:.2s}
+.ai-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot-pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+
+/* NM RANGE DISPLAY */
+.nm-range-bar{position:relative;height:8px;background:var(--bg4);border-radius:4px;margin:6px 0 2px;overflow:visible}
+.nm-range-fill{position:absolute;top:0;height:100%;border-radius:4px;transition:all .5s}
+.nm-marker{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;border:2px solid var(--bg2);transform:translateX(-50%)}
+</style>
+</head>
+<body>
+
+<!-- ALARM OVERLAY -->
+<div id="alarm-overlay">
+  <div class="alarm-box">
+    <div class="alarm-icon" id="alarm-icon">🔔</div>
+    <div class="alarm-title" id="alarm-title">Alarma</div>
+    <div id="alarm-ext-badge" class="alarm-ext-badge"></div>
+    <div class="alarm-msg" id="alarm-msg">Mensaje de alarma</div>
+    <button class="btn btn-danger" onclick="dismissAlarm()" style="width:100%;justify-content:center;padding:10px">Silenciar alarma</button>
+  </div>
+</div>
+
+<!-- LOADER -->
+<div id="loader"><div class="spin"></div><div id="loader-msg">Iniciando...</div></div>
+
+<header>
+  <div class="logo">Extru<em>Control</em></div>
+  <nav>
+    <button class="active" onclick="showPage('registro',this)">Registrar</button>
+    <button onclick="showPage('historial',this)">Historial</button>
+    <button onclick="showPage('consulta',this)">Consultar</button>
+    <button onclick="showPage('filtro',this)">Filtro</button>
+    <button onclick="showPage('config',this)">Config</button>
+  </nav>
+  <div id="clima-badge"><span>🌡</span><span id="clima-hd">—</span><span class="tv" id="clima-temp-hd">— °C</span></div>
+</header>
+
+<main>
+
+<!-- ══════════ CONFIG ══════════ -->
+<div id="page-config" class="page">
+  <div class="page-hd"><h1>Configuración</h1><p>Google Sheets, umbrales de filtro e IA para sugerencias.</p></div>
+
+  <div class="card">
+    <div class="card-title">Conexión — Google Apps Script Web App</div>
+    <div class="field"><label>URL del Web App</label><input type="text" id="cfg-url" placeholder="https://script.google.com/macros/s/XXXXX/exec" oninput="saveConfig()"></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-primary" onclick="testConexion()">Probar conexión</button>
+      <span id="cfg-test-result" style="font-size:11px;color:var(--text2)"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">IA para sugerencias — API Key</div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.7">
+      Cuando no hay registros exactos, la IA va a analizar el historial completo y sugerir parámetros con su razonamiento.
+      Podés usar Anthropic (Claude), OpenAI (GPT-4o) o Google (Gemini).
+    </p>
+    <div class="g2">
+      <div class="field"><label>Proveedor de IA</label>
+        <select id="cfg-ai-provider" onchange="saveConfig();toggleAiKeyLabel()">
+          <option value="">— sin IA —</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI (GPT-4o)</option>
+          <option value="gemini">Google Gemini</option>
+        </select>
+      </div>
+      <div class="field"><label id="cfg-ai-key-label">API Key</label>
+        <input type="password" id="cfg-ai-key" placeholder="sk-..." oninput="saveConfig()">
+      </div>
+    </div>
+    <p style="font-size:10px;color:var(--text3);line-height:1.6">La API Key se guarda solo en tu navegador (localStorage). Nunca se envía a ningún servidor propio.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Umbrales de N·m y Amp por extrusora</div>
+    <div class="g2">
+      <div>
+        <div style="font-size:11px;color:var(--ext2);margin-bottom:10px;font-family:var(--head);font-weight:700">▸ Extrusora N°2</div>
+        <div class="g2">
+          <div class="field"><label>N·m mínimo</label><input type="number" id="cfg-nm2-min" placeholder="50" oninput="saveConfig()"></div>
+          <div class="field"><label>N·m máximo</label><input type="number" id="cfg-nm2-max" placeholder="200" oninput="saveConfig()"></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Amp mínimo <span class="u">A</span></label><input type="number" id="cfg-amp2-min" placeholder="10" oninput="saveConfig()"></div>
+          <div class="field"><label>Amp máximo <span class="u">A</span></label><input type="number" id="cfg-amp2-max" placeholder="35" oninput="saveConfig()"></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--ext3);margin-bottom:10px;font-family:var(--head);font-weight:700">▸ Extrusora N°3</div>
+        <div class="g2">
+          <div class="field"><label>N·m mínimo</label><input type="number" id="cfg-nm3-min" placeholder="60" oninput="saveConfig()"></div>
+          <div class="field"><label>N·m máximo</label><input type="number" id="cfg-nm3-max" placeholder="250" oninput="saveConfig()"></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Amp mínimo <span class="u">A</span></label><input type="number" id="cfg-amp3-min" placeholder="12" oninput="saveConfig()"></div>
+          <div class="field"><label>Amp máximo <span class="u">A</span></label><input type="number" id="cfg-amp3-max" placeholder="45" oninput="saveConfig()"></div>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Ventana de análisis (últimos N registros por extrusora)</label>
+      <input type="number" id="cfg-ventana" value="10" min="3" max="50" oninput="saveConfig()"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Alarmas</div>
+    <div class="g2">
+      <div class="field">
+        <label>Recordatorio de registro (horas de inactividad)</label>
+        <input type="number" id="cfg-reminder-h" value="4" min="1" max="24" step="0.5" oninput="saveConfig()">
+      </div>
+      <div class="field">
+        <label>Alarma de filtro activa</label>
+        <select id="cfg-alarm-on" onchange="saveConfig()">
+          <option value="1">Activada</option>
+          <option value="0">Desactivada</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-ghost" onclick="testAlarm()">Probar sonido de alarma</button>
+  </div>
+</div>
+
+<!-- ══════════ REGISTRO ══════════ -->
+<div id="page-registro" class="page active">
+  <div id="cfg-warning" style="display:none">
+    <strong>⚠ Configuración pendiente</strong>
+    No configuraste la URL de Google Sheets. Los datos se guardan localmente hasta que la configures.
+    <button class="btn btn-ghost" style="margin-top:6px;font-size:11px" onclick="showPage('config',document.querySelectorAll('nav button')[4])">Ir a Config →</button>
+  </div>
+  <div class="page-hd"><h1>Nuevo registro</h1><p>Parámetros del turno actual.</p></div>
+
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">Extrusora</div>
+    <div class="ext-sel">
+      <div class="ext-btn" id="ext-btn-2" onclick="selExtrusora(2)"><div class="num">2</div><div class="lbl">Extrusora N°2</div></div>
+      <div class="ext-btn" id="ext-btn-3" onclick="selExtrusora(3)"><div class="num">3</div><div class="lbl">Extrusora N°3</div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="card">
+        <div class="card-title">Identificación</div>
+        <div class="g2">
+          <div class="field"><label>Fecha</label><input type="date" id="r-fecha" readonly></div>
+          <div class="field"><label>Hora</label><input type="time" id="r-hora" readonly></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Temp. clima <span class="u">°C — Junín BA</span></label><input type="number" id="r-clima" readonly></div>
+          <div class="field"><label>Condición</label><input type="text" id="r-clima-desc" readonly></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Material</label>
+            <select id="r-material">
+              <option value="">— seleccionar —</option>
+              <option>Negro</option><option>Caramelo</option>
+              <option>Virgen común</option><option>Hielo</option><option>Termo</option>
+            </select>
+          </div>
+          <div class="field"><label>Ancho <span class="u">mm</span></label><input type="number" id="r-ancho" placeholder="0"></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Espesor <span class="u">µm</span></label><input type="number" id="r-espesor" placeholder="0"></div>
+          <div class="field"><label>Obs.</label><input type="text" id="r-obs" placeholder="nota"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tablero y matriz (°C)</div>
+        <div class="g2">
+          <div class="field"><label>Tablero mín.</label><input type="number" id="r-tab-min" placeholder="0"></div>
+          <div class="field"><label>Tablero máx.</label><input type="number" id="r-tab-max" placeholder="0"></div>
+        </div>
+        <div class="g2">
+          <div class="field"><label>Matriz mín.</label><input type="number" id="r-mat-min" placeholder="0"></div>
+          <div class="field"><label>Matriz máx.</label><input type="number" id="r-mat-max" placeholder="0"></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Motor, producción y tren</div>
+        <div class="g3">
+          <div class="field"><label>Velocidad <span class="u">Hz</span></label><input type="number" id="r-hz" step="0.1" placeholder="0"></div>
+          <div class="field"><label>N·m</label><input type="number" id="r-nm" step="0.1" placeholder="0"></div>
+          <div class="field"><label>Amp <span class="u">A</span></label><input type="number" id="r-amp" step="0.1" placeholder="0"></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>Caudal <span class="u">kg/h</span></label><input type="number" id="r-caudal" step="0.1" placeholder="0"></div>
+          <div class="field"><label>Turbina <span class="u">0–50</span></label><input type="number" id="r-turbina" min="0" max="50" step="0.5" placeholder="0"></div>
+          <div class="field"><label>Tren de tiro</label><input type="number" id="r-tren" step="0.1" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="clearForm()">Limpiar</button>
+        <button class="btn btn-primary" id="btn-guardar" onclick="guardarRegistro()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 14V2h9l3 3v9H2z" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="2" width="5" height="3.5" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="9" width="8" height="5" stroke="currentColor" stroke-width="1.3"/></svg>
+          Guardar en Google Sheets
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HISTORIAL ══════════ -->
+<div id="page-historial" class="page">
+  <div class="page-hd"><h1>Historial</h1><p>Todos los registros almacenados.</p></div>
+  <div id="h-stats" class="g4" style="margin-bottom:14px"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+      <div class="field" style="margin:0;flex:1;min-width:100px"><label>Extrusora</label>
+        <select id="h-ext-f" onchange="renderHistorial()"><option value="">Ambas</option><option value="2">N°2</option><option value="3">N°3</option></select></div>
+      <div class="field" style="margin:0;flex:1;min-width:100px"><label>Material</label>
+        <select id="h-mat-f" onchange="renderHistorial()"><option value="">Todos</option>
+          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option></select></div>
+      <div class="field" style="margin:0;flex:1;min-width:90px"><label>Ancho ±5mm</label>
+        <input type="number" id="h-ancho-f" placeholder="todos" onchange="renderHistorial()"></div>
+      <button class="btn btn-ghost" onclick="resetFiltros()">Limpiar</button>
+      <button class="btn btn-ghost" onclick="cargarDatos()">↺ Actualizar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th>Fecha</th><th>Hora</th><th>Ext.</th><th>Clima</th>
+          <th>Tab↓</th><th>Tab↑</th><th>Mat↓</th><th>Mat↑</th>
+          <th>Hz</th><th>N·m</th><th>Amp</th><th>kg/h</th><th>Turb.</th><th>Tren</th>
+          <th>Ancho</th><th>Esp.</th><th>Mat.</th><th></th>
+        </tr></thead>
+        <tbody id="h-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Evolución N·m y Amp — últimos 30 registros</div>
+    <div style="display:flex;gap:16px;margin-bottom:8px;font-size:10px;color:var(--text2)" id="h-legend"></div>
+    <div class="chart-box"><canvas id="chartH"></canvas></div>
+  </div>
+</div>
+
+<!-- ══════════ CONSULTA ══════════ -->
+<div id="page-consulta" class="page">
+  <div class="page-hd"><h1>Consultar parámetros</h1><p>Buscá por medida/material. Si no hay datos exactos, la IA interpola y sugiere.</p></div>
+  <div class="card">
+    <div class="g3">
+      <div class="field"><label>Ancho objetivo <span class="u">mm</span></label><input type="number" id="c-ancho" placeholder="ej. 500"></div>
+      <div class="field"><label>Espesor objetivo <span class="u">µm</span></label><input type="number" id="c-espesor" placeholder="ej. 80"></div>
+      <div class="field"><label>Material</label>
+        <select id="c-mat"><option value="">— cualquiera —</option>
+          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option></select></div>
+    </div>
+    <div class="field" style="max-width:200px"><label>Extrusora</label>
+      <select id="c-ext"><option value="">Cualquiera</option><option value="2">N°2</option><option value="3">N°3</option></select></div>
+    <div class="btn-row" style="justify-content:flex-start;gap:10px">
+      <button class="btn btn-primary" onclick="consultarParametros()">Buscar en historial</button>
+      <button class="btn btn-ai" onclick="sugerirConIA()" id="btn-ia">✦ Sugerir con IA</button>
+    </div>
+  </div>
+  <div id="consulta-res"></div>
+</div>
+
+<!-- ══════════ FILTRO ══════════ -->
+<div id="page-filtro" class="page">
+  <div class="page-hd"><h1>Estado del filtro</h1><p>Análisis de tendencia N·m y Amp por extrusora.</p></div>
+  <div class="g2">
+    <div>
+      <div style="font-size:12px;color:var(--ext2);font-family:var(--head);font-weight:700;margin-bottom:8px">▸ Extrusora N°2</div>
+      <div id="f-alerta-2"></div>
+      <div class="g2" style="margin-bottom:10px">
+        <div class="stat"><div class="stat-lbl">N·m promedio</div><div class="stat-val" id="f-nm2">—</div><div class="stat-sub" id="f-nm2-sub"></div></div>
+        <div class="stat"><div class="stat-lbl">Amp promedio</div><div class="stat-val" id="f-amp2">—</div><div class="stat-sub" id="f-amp2-sub"></div></div>
+      </div>
+      <div class="card" style="padding:12px 14px">
+        <div id="nm2-bar-wrap"></div>
+        <div style="margin-top:8px" id="amp2-bar-wrap"></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--ext3);font-family:var(--head);font-weight:700;margin-bottom:8px">▸ Extrusora N°3</div>
+      <div id="f-alerta-3"></div>
+      <div class="g2" style="margin-bottom:10px">
+        <div class="stat"><div class="stat-lbl">N·m promedio</div><div class="stat-val" id="f-nm3">—</div><div class="stat-sub" id="f-nm3-sub"></div></div>
+        <div class="stat"><div class="stat-lbl">Amp promedio</div><div class="stat-val" id="f-amp3">—</div><div class="stat-sub" id="f-amp3-sub"></div></div>
+      </div>
+      <div class="card" style="padding:12px 14px">
+        <div id="nm3-bar-wrap"></div>
+        <div style="margin-top:8px" id="amp3-bar-wrap"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title">Histórico N·m — ambas extrusoras</div>
+    <div class="chart-box" style="height:210px"><canvas id="chartF"></canvas></div>
+  </div>
+</div>
+
+</main>
+<div id="snack"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════
+const CFG_KEY = 'extrucontrol_cfg_v3';
+const DB_KEY  = 'extrucontrol_db_local_v3';
+
+function getCfg() { try{return JSON.parse(localStorage.getItem(CFG_KEY)||'{}')}catch(e){return {}} }
+function saveCfg(c){ localStorage.setItem(CFG_KEY,JSON.stringify(c)) }
+
+function saveConfig(){
+  const c = getCfg();
+  const gv = id => document.getElementById(id)?.value||'';
+  const gn = id => parseFloat(document.getElementById(id)?.value)||0;
+  c.url         = gv('cfg-url');
+  c.aiProvider  = gv('cfg-ai-provider');
+  c.aiKey       = gv('cfg-ai-key');
+  c.nm2min      = gn('cfg-nm2-min') || 50;
+  c.nm2max      = gn('cfg-nm2-max') || 200;
+  c.amp2min     = gn('cfg-amp2-min') || 10;
+  c.amp2max     = gn('cfg-amp2-max') || 35;
+  c.nm3min      = gn('cfg-nm3-min') || 60;
+  c.nm3max      = gn('cfg-nm3-max') || 250;
+  c.amp3min     = gn('cfg-amp3-min') || 12;
+  c.amp3max     = gn('cfg-amp3-max') || 45;
+  c.ventana     = parseInt(gv('cfg-ventana'))||10;
+  c.reminderH   = parseFloat(gv('cfg-reminder-h'))||4;
+  c.alarmOn     = gv('cfg-alarm-on')==='1';
+  saveCfg(c);
+}
+
+function loadConfigUI(){
+  const c = getCfg();
+  const sv = (id,v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v; };
+  sv('cfg-url',       c.url||'');
+  sv('cfg-ai-provider',c.aiProvider||'');
+  sv('cfg-ai-key',    c.aiKey||'');
+  sv('cfg-nm2-min',   c.nm2min||50);
+  sv('cfg-nm2-max',   c.nm2max||200);
+  sv('cfg-amp2-min',  c.amp2min||10);
+  sv('cfg-amp2-max',  c.amp2max||35);
+  sv('cfg-nm3-min',   c.nm3min||60);
+  sv('cfg-nm3-max',   c.nm3max||250);
+  sv('cfg-amp3-min',  c.amp3min||12);
+  sv('cfg-amp3-max',  c.amp3max||45);
+  sv('cfg-ventana',   c.ventana||10);
+  sv('cfg-reminder-h',c.reminderH||4);
+  sv('cfg-alarm-on',  c.alarmOn===false?'0':'1');
+  toggleAiKeyLabel();
+}
+
+function toggleAiKeyLabel(){
+  const p = document.getElementById('cfg-ai-provider')?.value||'';
+  const lbl = document.getElementById('cfg-ai-key-label');
+  if(!lbl) return;
+  const map = {anthropic:'API Key (Anthropic)',openai:'API Key (OpenAI)',gemini:'API Key (Google Gemini)'};
+  lbl.textContent = map[p]||'API Key';
+}
+
+async function testConexion(){
+  const cfg=getCfg(), res=document.getElementById('cfg-test-result');
+  if(!cfg.url){res.textContent='⚠ Ingresá la URL.';res.style.color='var(--yellow)';return;}
+  res.textContent='Probando...';res.style.color='var(--text2)';
+  try{
+    const r=await apiCall('leer');
+    if(r.ok){res.textContent=`✓ OK — ${r.registros.length} registros`;res.style.color='var(--green)';}
+    else{res.textContent='✗ '+r.error;res.style.color='var(--red)';}
+  }catch(e){res.textContent='✗ '+e.message;res.style.color='var(--red)';}
+}
+
+// ══════════════════════════════════════════════
+//  API GOOGLE SHEETS
+// ══════════════════════════════════════════════
+async function apiCall(action,body={}){
+  const cfg=getCfg();
+  if(!cfg.url) throw new Error('URL no configurada');
+  const r = await fetch(cfg.url,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({action,...body})
+  });
+  return r.json();
+}
+
+// ══════════════════════════════════════════════
+//  LOCAL DB (fallback)
+// ══════════════════════════════════════════════
+function getLocal(){try{return JSON.parse(localStorage.getItem(DB_KEY)||'[]')}catch(e){return []}}
+function saveLocal(d){localStorage.setItem(DB_KEY,JSON.stringify(d))}
+let _cache=null;
+
+async function cargarDatos(){
+  loader('Cargando datos...');
+  try{
+    const cfg=getCfg();
+    if(cfg.url){
+      const r=await apiCall('leer');
+      if(r.ok){_cache=r.registros.map(mapSheet);snack('✓ '+_cache.length+' registros cargados.');}
+      else throw new Error(r.error);
+    } else {_cache=getLocal();}
+  }catch(e){_cache=getLocal();snack('⚠ Usando datos locales.');}
+  loaderHide();
+}
+
+function mapSheet(r){
+  return {
+    id:r.ID, fecha:r.Fecha, hora:r.Hora,
+    tempClima: parseFloat(r.Temp_Clima)||0,
+    extrusora: parseInt(r.Extrusora)||0,
+    tableroMin:parseFloat(r.Tablero_Min)||0,
+    tableroMax:parseFloat(r.Tablero_Max)||0,
+    matrizMin: parseFloat(r.Matriz_Min)||0,
+    matrizMax: parseFloat(r.Matriz_Max)||0,
+    velocidadHz:parseFloat(r.Velocidad_Hz)||0,
+    nm:  parseFloat(r.Nm)||0,
+    amp: parseFloat(r.Amp)||0,
+    caudal:  parseFloat(r.Caudal)||0,
+    turbina: parseFloat(r.Turbina)||0,
+    trenTiro:parseFloat(r.TrenTiro)||0,
+    ancho:   parseFloat(r.Ancho)||0,
+    espesor: parseFloat(r.Espesor)||0,
+    material:r.Material||'',
+    obs:r.Obs||''
+  };
+}
+
+// ══════════════════════════════════════════════
+//  CLIMA — Open-Meteo (sin API key)
+// ══════════════════════════════════════════════
+let climaActual=null;
+const LAT=-34.5875, LON=-60.9447;
+
+async function fetchClima(){
+  try{
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weathercode&timezone=America/Argentina/Buenos_Aires`;
+    const d=await(await fetch(url)).json();
+    const temp=d.current?.temperature_2m, code=d.current?.weathercode;
+    const desc=wmoDesc(code);
+    climaActual={temp,desc};
+    document.getElementById('clima-temp-hd').textContent=temp+' °C';
+    document.getElementById('clima-hd').textContent=desc;
+    const rc=document.getElementById('r-clima');   if(rc)rc.value=temp;
+    const rd=document.getElementById('r-clima-desc');if(rd)rd.value=desc;
+  }catch(e){}
+}
+function wmoDesc(c){
+  if(c===0)return'Despejado';if(c<=3)return'Parcialmente nublado';
+  if(c<=9)return'Brumoso';if(c<=29)return'Lluvia';
+  if(c<=49)return'Niebla';if(c<=69)return'Lluvia';
+  if(c<=79)return'Nieve';if(c<=99)return'Tormenta';
+  return'Variable';
+}
+
+// ══════════════════════════════════════════════
+//  NAV
+// ══════════════════════════════════════════════
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='historial')renderHistorial();
+  if(id==='filtro')renderFiltro();
+  if(id==='config')loadConfigUI();
+}
+
+// ══════════════════════════════════════════════
+//  EXTRUSORA
+// ══════════════════════════════════════════════
+let extSel=null;
+function selExtrusora(n){
+  extSel=n;
+  document.getElementById('ext-btn-2').className='ext-btn'+(n===2?' sel-2':'');
+  document.getElementById('ext-btn-3').className='ext-btn'+(n===3?' sel-3':'');
+}
+
+// ══════════════════════════════════════════════
+//  REGISTRO
+// ══════════════════════════════════════════════
+function initDatetime(){
+  const now=new Date(), pad=n=>String(n).padStart(2,'0');
+  const fd=document.getElementById('r-fecha'); if(fd)fd.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const fh=document.getElementById('r-hora');  if(fh)fh.value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+async function guardarRegistro(){
+  const gv=id=>document.getElementById(id)?.value.trim()||'';
+  const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
+  if(!extSel){snack('⚠ Seleccioná la extrusora.');return;}
+  if(!gv('r-material')){snack('⚠ Seleccioná el material.');return;}
+  if(!gn('r-ancho')){snack('⚠ Ingresá el ancho.');return;}
+  const rec={
+    id:Date.now(), fecha:gv('r-fecha'), hora:gv('r-hora'),
+    tempClima:gn('r-clima'), extrusora:extSel,
+    tableroMin:gn('r-tab-min'), tableroMax:gn('r-tab-max'),
+    matrizMin:gn('r-mat-min'),  matrizMax:gn('r-mat-max'),
+    velocidadHz:gn('r-hz'), nm:gn('r-nm'), amp:gn('r-amp'),
+    caudal:gn('r-caudal'), turbina:gn('r-turbina'), trenTiro:gn('r-tren'),
+    ancho:gn('r-ancho'), espesor:gn('r-espesor'),
+    material:gv('r-material'), obs:gv('r-obs')
+  };
+  const btn=document.getElementById('btn-guardar');
+  btn.textContent='Guardando...';btn.disabled=true;
+  try{
+    const cfg=getCfg();
+    if(cfg.url){await apiCall('guardar',rec);snack('✓ Guardado en Google Sheets.');}
+    else{const l=getLocal();l.push(rec);saveLocal(l);snack('✓ Guardado localmente.');}
+    if(_cache)_cache.push(rec);
+    lastEntryTime=Date.now();
+    clearForm();
+  }catch(e){snack('✗ Error: '+e.message);}
+  btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 14V2h9l3 3v9H2z" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="2" width="5" height="3.5" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="9" width="8" height="5" stroke="currentColor" stroke-width="1.3"/></svg> Guardar en Google Sheets`;
+  btn.disabled=false;
+}
+
+function clearForm(){
+  ['r-tab-min','r-tab-max','r-mat-min','r-mat-max','r-hz','r-nm','r-amp','r-caudal','r-turbina','r-tren','r-ancho','r-espesor','r-obs']
+    .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('r-material').selectedIndex=0;
+  extSel=null;
+  document.getElementById('ext-btn-2').className='ext-btn';
+  document.getElementById('ext-btn-3').className='ext-btn';
+  initDatetime();
+}
+
+// ══════════════════════════════════════════════
+//  HISTORIAL
+// ══════════════════════════════════════════════
+let chartH=null;
+function resetFiltros(){
+  ['h-ext-f','h-mat-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
+  const a=document.getElementById('h-ancho-f');if(a)a.value='';
+  renderHistorial();
+}
+
+function renderHistorial(){
+  const db=_cache||[];
+  const extF  =document.getElementById('h-ext-f')?.value||'';
+  const matF  =document.getElementById('h-mat-f')?.value||'';
+  const anchoF=parseFloat(document.getElementById('h-ancho-f')?.value)||0;
+  const fil=db.filter(r=>{
+    if(extF&&String(r.extrusora)!==extF)return false;
+    if(matF&&r.material!==matF)return false;
+    if(anchoF&&Math.abs(r.ancho-anchoF)>5)return false;
+    return true;
+  }).sort((a,b)=>String(b.id).localeCompare(String(a.id)));
+
+  const se=document.getElementById('h-stats');
+  if(se){
+    const avgNm=db.length?(db.reduce((s,r)=>s+r.nm,0)/db.length).toFixed(1):'—';
+    const e2=db.filter(r=>r.extrusora===2).length,e3=db.filter(r=>r.extrusora===3).length;
+    se.innerHTML=`
+      <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${db.length}</div></div>
+      <div class="stat"><div class="stat-lbl">Ext. 2</div><div class="stat-val" style="color:var(--ext2)">${e2}</div></div>
+      <div class="stat"><div class="stat-lbl">Ext. 3</div><div class="stat-val" style="color:var(--ext3)">${e3}</div></div>
+      <div class="stat"><div class="stat-lbl">N·m prom.</div><div class="stat-val">${avgNm}</div></div>`;
+  }
+
+  const tbody=document.getElementById('h-tbody');
+  if(!fil.length){
+    tbody.innerHTML='<tr><td colspan="18" style="text-align:center;padding:28px;color:var(--text3)">Sin registros</td></tr>';
+  } else {
+    tbody.innerHTML=fil.map(r=>`<tr>
+      <td>${r.fecha}</td><td>${r.hora}</td>
+      <td><span class="badge ${r.extrusora===2?'b-ext2':'b-ext3'}">N°${r.extrusora}</span></td>
+      <td>${r.tempClima}°C</td>
+      <td>${r.tableroMin}</td><td>${r.tableroMax}</td>
+      <td>${r.matrizMin}</td><td>${r.matrizMax}</td>
+      <td>${r.velocidadHz}</td><td>${r.nm}</td><td>${r.amp}</td>
+      <td>${r.caudal}</td><td>${r.turbina}</td><td>${r.trenTiro}</td>
+      <td>${r.ancho}mm</td><td>${r.espesor}µm</td><td>${r.material}</td>
+      <td><button class="btn btn-danger" style="padding:2px 7px;font-size:10px" onclick="borrarReg('${r.id}')">✕</button></td>
+    </tr>`).join('');
+  }
+
+  const last30=[...(db||[])].sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(-30);
+  const ctx=document.getElementById('chartH');if(!ctx)return;
+  if(chartH)chartH.destroy();
+  chartH=new Chart(ctx,{type:'line',
+    data:{labels:last30.map(r=>r.fecha.slice(5)),
+      datasets:[
+        {label:'N·m',data:last30.map(r=>r.nm),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5},
+        {label:'Amp',data:last30.map(r=>r.amp),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5,yAxisID:'y2'}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#44475a',font:{size:9},maxRotation:45}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#34d399',font:{size:10}}},
+        y2:{grid:{display:false},ticks:{color:'#4f8ef7',font:{size:10}},position:'right'}}}
+  });
+  const leg=document.getElementById('h-legend');
+  if(leg)leg.innerHTML=`<span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:#34d399;display:inline-block"></span>N·m</span><span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:2px;background:#4f8ef7;display:inline-block"></span>Amp (eje der.)</span>`;
+}
+
+async function borrarReg(id){
+  if(!confirm('¿Borrar este registro?'))return;
+  try{
+    const cfg=getCfg();
+    if(cfg.url)await apiCall('borrar',{id});
+    else{saveLocal(getLocal().filter(r=>String(r.id)!==String(id)));}
+    if(_cache)_cache=_cache.filter(r=>String(r.id)!==String(id));
+    renderHistorial();snack('Registro eliminado.');
+  }catch(e){snack('✗ '+e.message);}
+}
+
+// ══════════════════════════════════════════════
+//  CONSULTA — historial
+// ══════════════════════════════════════════════
+function consultarParametros(){
+  const anchoBuscado =parseFloat(document.getElementById('c-ancho')?.value)||0;
+  const espBuscado   =parseFloat(document.getElementById('c-espesor')?.value)||0;
+  const matBuscado   =document.getElementById('c-mat')?.value||'';
+  const extBuscada   =document.getElementById('c-ext')?.value||'';
+  const resEl=document.getElementById('consulta-res');
+  const db=_cache||[];
+  if(!anchoBuscado){snack('Ingresá el ancho objetivo.');return;}
+  if(!db.length){resEl.innerHTML=alerta('blue','ℹ','Sin datos','No hay registros cargados todavía.');return;}
+
+  const tolAncho=Math.max(anchoBuscado*.10,10);
+  const tolEsp=espBuscado?espBuscado*.15:Infinity;
+  let matches=db.filter(r=>
+    Math.abs(r.ancho-anchoBuscado)<=tolAncho&&
+    (!espBuscado||Math.abs(r.espesor-espBuscado)<=tolEsp)&&
+    (!matBuscado||r.material===matBuscado)&&
+    (!extBuscada||String(r.extrusora)===extBuscada)
+  );
+  let ampliado=false;
+  if(!matches.length){
+    matches=db.filter(r=>Math.abs(r.ancho-anchoBuscado)<=anchoBuscado*.15&&(!matBuscado||r.material===matBuscado)&&(!extBuscada||String(r.extrusora)===extBuscada));
+    ampliado=true;
+  }
+  if(!matches.length){
+    resEl.innerHTML=alerta('yellow','⚠','Sin coincidencias','No se encontraron registros similares. Usá el botón "Sugerir con IA" para que el sistema interpole basándose en el historial completo.');
+    return;
+  }
+  resEl.innerHTML=buildResultHTML(matches,anchoBuscado,espBuscado,matBuscado,extBuscada,ampliado,false);
+}
+
+function buildResultHTML(matches,ancho,esp,mat,ext,ampliado,esIA){
+  const avg=key=>+(matches.reduce((s,r)=>s+(parseFloat(r[key])||0),0)/matches.length).toFixed(1);
+  const avgNm=avg('nm'),avgAmp=avg('amp'),avgHz=avg('velocidadHz');
+  const avgTempClima=avg('tempClima');
+  const tempActual=climaActual?.temp??avgTempClima;
+  const deltTemp=avgTempClima-tempActual;
+  const corrFactor=1+(deltTemp*.008);
+  const nmCorregido=+(avgNm*corrFactor).toFixed(1);
+  const corMsg=Math.abs(deltTemp)>1?
+    `Clima actual ${tempActual}°C vs histórico ${avgTempClima}°C (Δ${deltTemp>0?'+':''}${deltTemp.toFixed(1)}°C) → N·m ajustado ${deltTemp>0?'+':''}${((corrFactor-1)*100).toFixed(1)}%`:
+    `Temperatura similar al historial (${tempActual}°C) — sin corrección.`;
+  const cfg=getCfg();
+  const extC=matches.reduce((a,r)=>{a[r.extrusora]=(a[r.extrusora]||0)+1;return a},{});
+  const extPred=Object.entries(extC).sort((a,b)=>b[1]-a[1])[0]?.[0];
+  const nmMax=extPred==='2'?(cfg.nm2max||200):(cfg.nm3max||250);
+  const ampMax=extPred==='2'?(cfg.amp2max||35):(cfg.amp3max||45);
+  const filAlert=nmCorregido>nmMax*.88||avgAmp>ampMax*.88;
+  const srcBadge=esIA?'<span class="badge b-ai">✦ IA</span>':'<span class="badge b-green">Historial</span>';
+  const amplidoBanner=ampliado?`<div style="padding:8px 14px;font-size:10px;color:var(--yellow);border-bottom:1px solid var(--border)">⚠ Tolerancia ampliada — no se encontraron registros exactos para espesor ${esp}µm</div>`:'';
+  return `<div class="res-block">
+    <div class="res-hd"><div class="res-title">Parámetros — ${ancho}mm${esp?' / '+esp+'µm':''}${mat?' · '+mat:''}</div>
+      <div style="display:flex;gap:6px;align-items:center">${srcBadge}<span style="font-size:10px;color:var(--text3)">${matches.length} registro${matches.length>1?'s':''}</span></div></div>
+    ${amplidoBanner}
+    <div class="param-grid">
+      <div class="pi"><div class="pi-name">Hz motor</div><div class="pi-val">${avgHz}</div></div>
+      <div class="pi"><div class="pi-name">N·m esperado</div><div class="pi-val" style="color:var(--green)">${nmCorregido}</div><div class="pi-unit">ajustado por clima</div></div>
+      <div class="pi"><div class="pi-name">Amp</div><div class="pi-val">${avgAmp}</div><div class="pi-unit">A</div></div>
+      <div class="pi"><div class="pi-name">Caudal</div><div class="pi-val">${avg('caudal')}</div><div class="pi-unit">kg/h</div></div>
+      <div class="pi"><div class="pi-name">Turbina</div><div class="pi-val">${avg('turbina')}</div><div class="pi-unit">/50</div></div>
+      <div class="pi"><div class="pi-name">Tren de tiro</div><div class="pi-val">${avg('trenTiro')}</div></div>
+      <div class="pi"><div class="pi-name">Tablero mín.</div><div class="pi-val">${avg('tableroMin')}</div><div class="pi-unit">°C</div></div>
+      <div class="pi"><div class="pi-name">Tablero máx.</div><div class="pi-val">${avg('tableroMax')}</div><div class="pi-unit">°C</div></div>
+      <div class="pi"><div class="pi-name">Matriz mín.</div><div class="pi-val">${avg('matrizMin')}</div><div class="pi-unit">°C</div></div>
+      <div class="pi"><div class="pi-name">Matriz máx.</div><div class="pi-val">${avg('matrizMax')}</div><div class="pi-unit">°C</div></div>
+      <div class="pi"><div class="pi-name">Ext. frecuente</div><div class="pi-val" style="color:${extPred==='2'?'var(--ext2)':'var(--ext3)'}">N°${extPred||'—'}</div></div>
+    </div>
+    <div style="padding:9px 13px;border-top:1px solid var(--border);font-size:10px;color:var(--text2)">🌡 ${corMsg}</div>
+  </div>
+  ${filAlert?alerta('yellow','⚠','Revisá el filtro antes de arrancar',`N·m esperado (${nmCorregido}) o Amp (${avgAmp} A) se acercan al umbral de Ext. N°${extPred}.`):alerta('green','✓','Filtro sin alertas',`Valores esperados dentro del rango normal para Ext. N°${extPred||'—'}.`)}`;
+}
+
+// ══════════════════════════════════════════════
+//  SUGERIR CON IA
+// ══════════════════════════════════════════════
+async function sugerirConIA(){
+  const cfg=getCfg();
+  if(!cfg.aiProvider||!cfg.aiKey){
+    snack('Configurá el proveedor de IA y la API Key en Config.');
+    showPage('config',document.querySelectorAll('nav button')[4]);
+    return;
+  }
+  const ancho  =parseFloat(document.getElementById('c-ancho')?.value)||0;
+  const esp    =parseFloat(document.getElementById('c-espesor')?.value)||0;
+  const mat    =document.getElementById('c-mat')?.value||'';
+  const extB   =document.getElementById('c-ext')?.value||'';
+  const resEl  =document.getElementById('consulta-res');
+  if(!ancho){snack('Ingresá el ancho objetivo.');return;}
+  const db=_cache||[];
+  if(!db.length){resEl.innerHTML=alerta('blue','ℹ','Sin historial','Necesitás tener al menos algunos registros para que la IA pueda interpolar.');return;}
+
+  resEl.innerHTML=`<div class="ai-loading"><div class="ai-dots"><span></span><span></span><span></span></div> Consultando IA — analizando ${db.length} registros históricos...</div>`;
+
+  // Preparar contexto resumido para la IA
+  const sample=db.slice(-60);
+  const histResumen=sample.map(r=>`Ext${r.extrusora}|${r.material}|ancho:${r.ancho}|esp:${r.espesor}|Hz:${r.velocidadHz}|Nm:${r.nm}|Amp:${r.amp}|kg/h:${r.caudal}|turb:${r.turbina}|tren:${r.trenTiro}|tabMin:${r.tableroMin}|tabMax:${r.tableroMax}|matMin:${r.matrizMin}|matMax:${r.matrizMax}|climaC:${r.tempClima}`).join('\n');
+
+  const prompt=`Sos un experto en extrusoras de soplado de film plástico. Analizá el historial de registros de producción y sugerí parámetros para la combinación pedida.
+
+HISTORIAL DE REGISTROS (últimos ${sample.length}):
+${histResumen}
+
+CONSULTA:
+- Ancho objetivo: ${ancho} mm
+- Espesor objetivo: ${esp||'no especificado'} µm
+- Material: ${mat||'no especificado'}
+- Extrusora preferida: ${extB?'N°'+extB:'sin preferencia'}
+- Temperatura ambiente actual (Junín, BA): ${climaActual?.temp??'desconocida'} °C
+
+Respondé SOLO con un JSON válido (sin markdown, sin texto extra) con esta estructura:
+{
+  "extrusora": 2,
+  "hz": 0,
+  "nm": 0,
+  "amp": 0,
+  "caudal": 0,
+  "turbina": 0,
+  "trenTiro": 0,
+  "tableroMin": 0,
+  "tableroMax": 0,
+  "matrizMin": 0,
+  "matrizMax": 0,
+  "confianza": "alta|media|baja",
+  "razonamiento": "explicación breve en español de cómo llegaste a estos valores"
+}`;
+
+  try{
+    let params=null;
+    if(cfg.aiProvider==='anthropic') params=await callAnthropic(cfg.aiKey,prompt);
+    else if(cfg.aiProvider==='openai') params=await callOpenAI(cfg.aiKey,prompt);
+    else if(cfg.aiProvider==='gemini') params=await callGemini(cfg.aiKey,prompt);
+
+    if(!params) throw new Error('No se obtuvo respuesta de la IA.');
+
+    const confColor={alta:'var(--green)',media:'var(--yellow)',baja:'var(--orange)'}[params.confianza]||'var(--text2)';
+    const synth=[{
+      velocidadHz:params.hz,nm:params.nm,amp:params.amp,
+      caudal:params.caudal,turbina:params.turbina,trenTiro:params.trenTiro,
+      tableroMin:params.tableroMin,tableroMax:params.tableroMax,
+      matrizMin:params.matrizMin,matrizMax:params.matrizMax,
+      extrusora:params.extrusora,tempClima:climaActual?.temp||20,
+      ancho,espesor:esp,material:mat
+    }];
+
+    resEl.innerHTML=`
+      <div class="ai-block">
+        <h3>✦ Sugerencia de IA <span style="font-size:10px;font-family:var(--mono);color:${confColor};margin-left:6px">confianza: ${params.confianza}</span></h3>
+        <div class="ai-param-grid">
+          <div class="ai-param"><div class="ai-param-name">Extrusora</div><div class="ai-param-val">N°${params.extrusora}</div></div>
+          <div class="ai-param"><div class="ai-param-name">Hz motor</div><div class="ai-param-val">${params.hz}</div></div>
+          <div class="ai-param"><div class="ai-param-name">N·m</div><div class="ai-param-val">${params.nm}</div></div>
+          <div class="ai-param"><div class="ai-param-name">Amp</div><div class="ai-param-val">${params.amp}</div><div class="ai-param-unit">A</div></div>
+          <div class="ai-param"><div class="ai-param-name">Caudal</div><div class="ai-param-val">${params.caudal}</div><div class="ai-param-unit">kg/h</div></div>
+          <div class="ai-param"><div class="ai-param-name">Turbina</div><div class="ai-param-val">${params.turbina}</div><div class="ai-param-unit">/50</div></div>
+          <div class="ai-param"><div class="ai-param-name">Tren de tiro</div><div class="ai-param-val">${params.trenTiro}</div></div>
+          <div class="ai-param"><div class="ai-param-name">Tablero</div><div class="ai-param-val">${params.tableroMin}–${params.tableroMax}</div><div class="ai-param-unit">°C</div></div>
+          <div class="ai-param"><div class="ai-param-name">Matriz</div><div class="ai-param-val">${params.matrizMin}–${params.matrizMax}</div><div class="ai-param-unit">°C</div></div>
+        </div>
+        <div class="ai-reasoning"><strong style="color:#c4b5fd;font-size:10px;letter-spacing:.5px;text-transform:uppercase">Razonamiento de la IA:</strong><br>${params.razonamiento}</div>
+      </div>
+    `+buildResultHTML(synth,ancho,esp,mat,extB,false,true);
+  }catch(e){
+    resEl.innerHTML=alerta('red','✗','Error de IA',e.message);
+  }
+}
+
+async function callAnthropic(key,prompt){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  const text=d.content?.[0]?.text||'';
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function callOpenAI(key,prompt){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body:JSON.stringify({model:'gpt-4o',max_tokens:800,messages:[{role:'user',content:prompt}]})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  const text=d.choices?.[0]?.message?.content||'';
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+async function callGemini(key,prompt){
+  const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+// ══════════════════════════════════════════════
+//  FILTRO
+// ══════════════════════════════════════════════
+let chartF=null;
+function renderFiltro(){
+  const db=_cache||[], cfg=getCfg();
+  const vent=cfg.ventana||10;
+  [2,3].forEach(n=>{
+    const recs=db.filter(r=>r.extrusora===n).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+    const last=recs.slice(-vent);
+    const nmMin =n===2?(cfg.nm2min||50): (cfg.nm3min||60);
+    const nmMax =n===2?(cfg.nm2max||200):(cfg.nm3max||250);
+    const ampMin=n===2?(cfg.amp2min||10):(cfg.amp3min||12);
+    const ampMax=n===2?(cfg.amp2max||35):(cfg.amp3max||45);
+    if(!last.length){
+      document.getElementById(`f-alerta-${n}`).innerHTML=alerta('blue','ℹ',`Sin datos para Ext. N°${n}`,'');
+      return;
+    }
+    const avgNm =+(last.reduce((s,r)=>s+r.nm, 0)/last.length).toFixed(1);
+    const avgAmp=+(last.reduce((s,r)=>s+r.amp,0)/last.length).toFixed(1);
+    document.getElementById(`f-nm${n}`).textContent=avgNm+' N·m';
+    document.getElementById(`f-amp${n}`).textContent=avgAmp+' A';
+    document.getElementById(`f-nm${n}-sub`).textContent=`últimos ${last.length} reg.`;
+    document.getElementById(`f-amp${n}-sub`).textContent=`últimos ${last.length} reg.`;
+
+    // Barra N·m con rango min-max
+    const nmPct=Math.min(100,Math.max(0,((avgNm-nmMin)/(nmMax-nmMin))*100));
+    const ampPct=Math.min(100,Math.max(0,((avgAmp-ampMin)/(ampMax-ampMin))*100));
+    const barC=p=>p>88?'var(--red)':p>72?'var(--yellow)':'var(--green)';
+
+    document.getElementById(`nm${n}-bar-wrap`).innerHTML=`
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:3px"><span>N·m — rango ${nmMin}–${nmMax}</span><span style="color:${barC(nmPct)}">${avgNm} N·m</span></div>
+      <div class="pb-bg"><div class="pb" style="width:${nmPct}%;background:${barC(nmPct)}"></div></div>
+      <div class="pb-labels"><span>${nmMin}</span><span>óptimo</span><span>${nmMax}</span></div>`;
+    document.getElementById(`amp${n}-bar-wrap`).innerHTML=`
+      <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-bottom:3px"><span>Amp — rango ${ampMin}–${ampMax}</span><span style="color:${barC(ampPct)}">${avgAmp} A</span></div>
+      <div class="pb-bg"><div class="pb" style="width:${ampPct}%;background:${barC(ampPct)}"></div></div>
+      <div class="pb-labels"><span>${ampMin}</span><span>óptimo</span><span>${ampMax}</span></div>`;
+
+    // Tendencia
+    const mid=Math.floor(last.length/2);
+    const fh=last.slice(0,mid),sh=last.slice(mid);
+    const t1=fh.reduce((s,r)=>s+r.nm,0)/fh.length;
+    const t2=sh.reduce((s,r)=>s+r.nm,0)/sh.length;
+    const tend=t2>t1*1.05;
+    const alEl=document.getElementById(`f-alerta-${n}`);
+    if(avgNm>nmMax||avgAmp>ampMax){
+      alEl.innerHTML=alerta('red','🔴',`CAMBIO DE FILTRO — Ext. N°${n}`,`${avgNm>nmMax?'N·m '+avgNm+' supera límite ('+nmMax+'). ':''}${avgAmp>ampMax?'Amp '+avgAmp+' A supera límite ('+ampMax+' A).':''}`);
+      if(cfg.alarmOn!==false) triggerAlarm('filter',n,`N·m: ${avgNm} / Amp: ${avgAmp} A — supera el umbral configurado.`);
+    } else if(avgNm>nmMax*.85||avgAmp>ampMax*.85||tend){
+      alEl.innerHTML=alerta('yellow','🟡',`Planificar cambio — Ext. N°${n}`,`${tend?'Tendencia al alza. ':''}N·m: ${avgNm} (${Math.round(nmPct)}% del rango) · Amp: ${avgAmp} A`);
+    } else if(avgNm<nmMin){
+      alEl.innerHTML=alerta('blue','ℹ',`N·m bajo — Ext. N°${n}`,`N·m: ${avgNm} está por debajo del mínimo esperado (${nmMin}). Verificá configuración.`);
+    } else {
+      alEl.innerHTML=alerta('green','✓',`Filtro OK — Ext. N°${n}`,`N·m: ${avgNm} · Amp: ${avgAmp} A — dentro del rango.`);
+    }
+  });
+
+  // Chart comparativo
+  const e2=db.filter(r=>r.extrusora===2).sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(-30);
+  const e3=db.filter(r=>r.extrusora===3).sort((a,b)=>String(a.id).localeCompare(String(b.id))).slice(-30);
+  const len=Math.max(e2.length,e3.length,1);
+  const ctx=document.getElementById('chartF');if(!ctx)return;
+  if(chartF)chartF.destroy();
+  chartF=new Chart(ctx,{type:'line',
+    data:{labels:Array.from({length:len},(_,i)=>i+1),
+      datasets:[
+        {label:'Ext.2 N·m',data:e2.map(r=>r.nm),borderColor:'#a78bfa',backgroundColor:'rgba(167,139,250,.05)',tension:.35,pointRadius:2,borderWidth:1.5},
+        {label:'Ext.3 N·m',data:e3.map(r=>r.nm),borderColor:'#38bdf8',backgroundColor:'rgba(56,189,248,.05)',tension:.35,pointRadius:2,borderWidth:1.5}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#44475a',font:{size:9}}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#8b8fa8',font:{size:10}}}}}
+  });
+}
+
+// ══════════════════════════════════════════════
+//  ALARMA DE SONIDO
+// ══════════════════════════════════════════════
+let audioCtx=null, alarmInterval=null, alarmShowing=false;
+let lastEntryTime=Date.now();
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playBeep(freq=880,dur=0.3,vol=0.4){
+  try{
+    const ctx=getAudioCtx();
+    const osc=ctx.createOscillator(), gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.frequency.value=freq;
+    gain.gain.setValueAtTime(vol,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+dur);
+    osc.start(ctx.currentTime);osc.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+
+function playAlarmSound(){
+  playBeep(880,.15,.5);
+  setTimeout(()=>playBeep(1100,.15,.5),200);
+  setTimeout(()=>playBeep(880,.15,.5),400);
+  setTimeout(()=>playBeep(1100,.2,.5),600);
+}
+
+function testAlarm(){ playAlarmSound(); snack('Sonido de alarma activo.'); }
+
+function triggerAlarm(type,ext,msg){
+  if(alarmShowing)return;
+  alarmShowing=true;
+  const overlay=document.getElementById('alarm-overlay');
+  const icon=document.getElementById('alarm-icon');
+  const title=document.getElementById('alarm-title');
+  const msgEl=document.getElementById('alarm-msg');
+  const extBadge=document.getElementById('alarm-ext-badge');
+  if(type==='filter'){
+    icon.textContent='🔴';
+    title.textContent='Cambiar filtro';
+    title.style.color='var(--red)';
+    extBadge.textContent='Extrusora N°'+ext;
+    extBadge.style.background='rgba(248,113,113,.15)';
+    extBadge.style.color='var(--red)';
+    msgEl.textContent=msg;
+  } else {
+    icon.textContent='🔔';
+    title.textContent='Recordatorio de registro';
+    title.style.color='var(--yellow)';
+    extBadge.textContent='Han pasado más de '+msg+' horas';
+    extBadge.style.background='rgba(251,191,36,.15)';
+    extBadge.style.color='var(--yellow)';
+    msgEl.textContent='Recordá tomar los parámetros actuales de las extrusoras y registrarlos.';
+  }
+  overlay.classList.add('show');
+  alarmInterval=setInterval(playAlarmSound,2000);
+  playAlarmSound();
+}
+
+function dismissAlarm(){
+  alarmShowing=false;
+  document.getElementById('alarm-overlay').classList.remove('show');
+  if(alarmInterval){clearInterval(alarmInterval);alarmInterval=null;}
+}
+
+// Verificar condiciones cada minuto
+function checkAlarms(){
+  const cfg=getCfg();
+  if(cfg.alarmOn===false)return;
+  // Recordatorio de registro
+  const reminderMs=(cfg.reminderH||4)*3600*1000;
+  if(Date.now()-lastEntryTime>reminderMs&&!alarmShowing){
+    const h=((Date.now()-lastEntryTime)/3600000).toFixed(1);
+    triggerAlarm('reminder',null,h);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function alerta(tipo,ico,titulo,msg){
+  const cls={red:'al-red',yellow:'al-yellow',green:'al-green',blue:'al-blue',purple:'al-purple'}[tipo]||'al-blue';
+  return `<div class="alert ${cls}"><div class="alert-ico">${ico}</div><div class="alert-body"><div class="alert-title">${titulo}</div>${msg?`<div class="alert-msg">${msg}</div>`:''}</div></div>`;
+}
+function loader(m='Cargando...'){document.getElementById('loader-msg').textContent=m;document.getElementById('loader').classList.remove('hidden');}
+function loaderHide(){document.getElementById('loader').classList.add('hidden');}
+function snack(msg){const el=document.getElementById('snack');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+async function init(){
+  loader('Iniciando ExtruControl...');
+  loadConfigUI();
+  initDatetime();
+  const cfg=getCfg();
+  const w=document.getElementById('cfg-warning');
+  if(w)w.style.display=cfg.url?'none':'block';
+  await fetchClima();
+  await cargarDatos();
+  loaderHide();
+  // Restaurar lastEntryTime desde el registro más reciente
+  if(_cache&&_cache.length){
+    const last=_cache.reduce((a,b)=>String(b.id)>String(a.id)?b:a,_cache[0]);
+    const d=new Date(last.fecha+' '+last.hora);
+    if(!isNaN(d)) lastEntryTime=d.getTime();
+  }
+  setInterval(initDatetime,60000);
+  setInterval(fetchClima,15*60*1000);
+  setInterval(checkAlarms,60*1000);
+  // Verificar filtro cada 30 min si hay datos
+  setInterval(()=>{if(_cache&&_cache.length)renderFiltro();},30*60*1000);
+}
+init();
+</script>
+</body>
+</html>
