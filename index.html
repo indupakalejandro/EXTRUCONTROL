@@ -188,6 +188,39 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .nm-range-bar{position:relative;height:8px;background:var(--bg4);border-radius:4px;margin:6px 0 2px;overflow:visible}
 .nm-range-fill{position:absolute;top:0;height:100%;border-radius:4px;transition:all .5s}
 .nm-marker{position:absolute;top:-4px;width:16px;height:16px;border-radius:50%;border:2px solid var(--bg2);transform:translateX(-50%)}
+
+/* ── HISTORIAL VISUAL ── */
+@keyframes screwFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-22}}
+@keyframes screwFlowL{from{stroke-dashoffset:0}to{stroke-dashoffset:22}}
+@keyframes bubbleBreath{0%,100%{opacity:.55;transform:scaleX(1)}50%{opacity:.9;transform:scaleX(1.09)}}
+@keyframes slideInL{from{transform:translateX(-55px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInR{from{transform:translateX(55px);opacity:0}to{transform:translateX(0);opacity:1}}
+.screw-flow-r{animation:screwFlow 1.1s linear infinite}
+.screw-flow-l{animation:screwFlowL 1.1s linear infinite}
+.bubble-anim{animation:bubbleBreath 2.6s ease-in-out infinite;transform-origin:center center}
+.slide-in-l{animation:slideInL .4s cubic-bezier(.25,.46,.45,.94) forwards}
+.slide-in-r{animation:slideInR .4s cubic-bezier(.25,.46,.45,.94) forwards}
+.hv-mach-btn{flex:1;padding:14px 10px;border-radius:var(--r);border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;transition:all .2s;text-align:center}
+.hv-mach-btn .bnum{font-family:var(--head);font-size:34px;font-weight:700;line-height:1}
+.hv-mach-btn .blbl{font-size:9px;color:var(--text3);margin-top:3px;letter-spacing:.8px;text-transform:uppercase}
+.hv-mach-btn.hv-sel2{border-color:var(--ext2);background:rgba(167,139,250,.09)}.hv-mach-btn.hv-sel2 .bnum{color:var(--ext2)}
+.hv-mach-btn.hv-sel3{border-color:var(--ext3);background:rgba(56,189,248,.09)}.hv-mach-btn.hv-sel3 .bnum{color:var(--ext3)}
+.hv-mach-btn.hv-selA{border-color:var(--accent);background:rgba(79,142,247,.08)}.hv-mach-btn.hv-selA .bnum{color:var(--accent);font-size:18px;padding-top:7px}
+.mini-stat{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 14px}
+.mini-stat-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+.mini-stat-val{font-size:19px;font-weight:500;line-height:1.1}
+.mini-stat-sub{font-size:9px;color:var(--text3);margin-top:2px}
+.spark-box{position:relative;height:130px;width:100%}
+.spark-box-sm{position:relative;height:80px;width:100%}
+.trend-up{color:#34d399}.trend-dn{color:#f87171}.trend-eq{color:#7c809a}
+.kpi-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;display:flex;flex-direction:column;gap:2px}
+.kpi-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.kpi-val{font-size:26px;font-weight:500;line-height:1.1}
+.kpi-row{display:flex;align-items:baseline;gap:6px}
+.kpi-unit{font-size:10px;color:var(--text3)}
+.kpi-trend{font-size:11px;font-weight:500}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:1px}
+.ext-svg-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
 </style>
 </head>
 <body>
@@ -253,6 +286,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
       </div>
     </div>
     <p style="font-size:10px;color:var(--text3);line-height:1.6">La API Key se guarda solo en tu navegador (localStorage). Nunca se envía a ningún servidor propio.</p>
+    <div style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.2);border-radius:var(--rsm);padding:8px 12px;margin-top:8px;font-size:10px;color:var(--green);line-height:1.6"><strong>✓ Sync automático:</strong> El resto de la configuración (umbrales, ventana, proveedor de IA) se guarda en la hoja <em>Configuracion</em> de tu Google Sheet y se carga automáticamente al abrir la app desde cualquier dispositivo. Solo la URL y la API Key se guardan localmente por seguridad.</div>
   </div>
 
   <div class="card">
@@ -387,8 +421,57 @@ tr:hover td{background:rgba(255,255,255,.015)}
 
 <!-- ══════════ HISTORIAL ══════════ -->
 <div id="page-historial" class="page">
-  <div class="page-hd"><h1>Historial</h1><p>Todos los registros almacenados.</p></div>
-  <div id="h-stats" class="g4" style="margin-bottom:14px"></div>
+  <div class="page-hd"><h1>Historial</h1><p>Panel visual de producción por extrusora.</p></div>
+
+  <!-- Machine visual selector -->
+  <div style="display:flex;gap:10px;margin-bottom:16px">
+    <div class="hv-mach-btn" id="hvb-2" onclick="selectHistMachine(2)">
+      <div class="bnum">2</div><div class="blbl">Extrusora N°2</div>
+    </div>
+    <div class="hv-mach-btn" id="hvb-3" onclick="selectHistMachine(3)">
+      <div class="bnum">3</div><div class="blbl">Extrusora N°3</div>
+    </div>
+    <div class="hv-mach-btn" id="hvb-all" onclick="selectHistMachine(0)" style="flex:.55">
+      <div class="bnum" style="font-size:18px;padding-top:8px">2+3</div><div class="blbl">Ambas</div>
+    </div>
+  </div>
+
+  <!-- Visual panel -->
+  <div id="hv-panel" style="display:none;margin-bottom:16px;overflow:hidden">
+    <div id="hv-layout" style="display:flex;gap:14px;align-items:flex-start">
+      <div id="hv-ext-col" style="flex:0 0 370px">
+        <div class="ext-svg-card">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px" id="hv-ext-lbl">Extrusora</div>
+          <div id="hv-svg-wrap"></div>
+        </div>
+      </div>
+      <div id="hv-info-col" style="flex:1;min-width:0">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:10px" id="hv-mini-stats"></div>
+        <div class="card" style="padding:12px 16px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div class="card-title" style="margin-bottom:0">Caudal (kg/h)</div>
+            <span style="font-size:9px;color:var(--text3)">últimos 20 registros</span>
+          </div>
+          <div class="spark-box"><canvas id="sparkCaudal"></canvas></div>
+        </div>
+        <div class="card" style="padding:12px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+            <div class="card-title" style="margin-bottom:0">N·m y Amp</div>
+            <div style="display:flex;gap:10px;font-size:9px">
+              <span style="color:#34d399">— N·m</span>
+              <span style="color:#4f8ef7">— Amp (der.)</span>
+            </div>
+          </div>
+          <div class="spark-box"><canvas id="sparkNmAmp"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global stats -->
+  <div id="h-stats" class="g4" style="margin-bottom:12px"></div>
+
+  <!-- Filters -->
   <div class="card" style="margin-bottom:12px">
     <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
       <div class="field" style="margin:0;flex:1;min-width:100px"><label>Extrusora</label>
@@ -402,11 +485,13 @@ tr:hover td{background:rgba(255,255,255,.015)}
       <button class="btn btn-ghost" onclick="cargarDatos()">↺ Actualizar</button>
     </div>
   </div>
+
+  <!-- Table -->
   <div class="card">
     <div class="tw">
       <table>
         <thead><tr>
-          <th>Fecha</th><th>Hora</th><th>Ext.</th><th>Clima</th>
+          <th>Fecha / Hora</th><th>Ext.</th><th>Clima</th>
           <th>Tab↓</th><th>Tab↑</th><th>Mat↓</th><th>Mat↑</th>
           <th>Hz</th><th>N·m</th><th>Amp</th><th>kg/h</th><th>Turb.</th><th>Tren</th>
           <th>Ancho</th><th>Esp.</th><th>Mat.</th><th></th>
@@ -415,8 +500,10 @@ tr:hover td{background:rgba(255,255,255,.015)}
       </table>
     </div>
   </div>
+
+  <!-- Trend chart -->
   <div class="card">
-    <div class="card-title">Evolución N·m y Amp — últimos 30 registros</div>
+    <div class="card-title">Evolución N·m y Amp — registros filtrados</div>
     <div style="display:flex;gap:16px;margin-bottom:8px;font-size:10px;color:var(--text2)" id="h-legend"></div>
     <div class="chart-box"><canvas id="chartH"></canvas></div>
   </div>
@@ -510,6 +597,26 @@ function saveConfig(){
   c.reminderH   = parseFloat(gv('cfg-reminder-h'))||4;
   c.alarmOn     = gv('cfg-alarm-on')==='1';
   saveCfg(c);
+  // Sync to Sheets (debounced 2s)
+  clearTimeout(window._cfgTimer);
+  window._cfgTimer = setTimeout(async()=>{
+    if(c.url){try{await apiCall('guardarConfig',{config:c});}catch(e){}}
+  }, 2000);
+}
+
+async function syncConfigFromSheets(){
+  const cfg=getCfg();
+  if(!cfg.url)return;
+  try{
+    const r=await apiCall('leerConfig');
+    if(r.ok&&r.config&&Object.keys(r.config).length>0){
+      const url=cfg.url; // always keep local URL
+      const merged={...r.config,url};
+      saveCfg(merged);
+      loadConfigUI();
+      snack('✓ Configuración sincronizada desde Google Sheets.');
+    }
+  }catch(e){}
 }
 
 function loadConfigUI(){
@@ -585,9 +692,46 @@ async function cargarDatos(){
   loaderHide();
 }
 
+function normFecha(v){
+  if(!v)return'';
+  // Sheets can return Date objects serialized as ISO or as various string formats
+  const s=String(v).trim();
+  // ISO datetime: 2025-03-27T00:00:00.000Z or 2025-03-27T03:00:00.000Z (Argentina offset)
+  if(s.includes('T')){
+    // parse as date, shift to local date string
+    const d=new Date(s);
+    if(!isNaN(d)){
+      // Use UTC date parts since Sheets stores dates without timezone
+      const y=d.getUTCFullYear(), mo=String(d.getUTCMonth()+1).padStart(2,'0'), dy=String(d.getUTCDate()).padStart(2,'0');
+      return `${y}-${mo}-${dy}`;
+    }
+  }
+  // Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Already DD/MM/YYYY
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)){
+    const p=s.split('/');
+    return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  }
+  return s;
+}
+function normHora(v){
+  if(!v&&v!==0)return'';
+  const s=String(v).trim();
+  // Sheets time as decimal fraction of day (e.g. 0.5 = 12:00)
+  if(!isNaN(parseFloat(s))&&!s.includes(':')&&parseFloat(s)<1){
+    const totalMin=Math.round(parseFloat(s)*1440);
+    const h=Math.floor(totalMin/60), m=totalMin%60;
+    return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  }
+  // HH:MM:SS -> HH:MM
+  if(s.includes(':'))return s.substring(0,5);
+  return s;
+}
+
 function mapSheet(r){
   return {
-    id:r.ID, fecha:r.Fecha, hora:r.Hora,
+    id:r.ID, fecha:normFecha(r.Fecha), hora:normHora(r.Hora),
     tempClima: parseFloat(r.Temp_Clima)||0,
     extrusora: parseInt(r.Extrusora)||0,
     tableroMin:parseFloat(r.Tablero_Min)||0,
@@ -709,7 +853,225 @@ function clearForm(){
 // ══════════════════════════════════════════════
 //  HISTORIAL
 // ══════════════════════════════════════════════
-let chartH=null;
+let chartH=null, sparkC=null, sparkN=null;
+let selHvMachine=0;
+
+function parseFecha(f){
+  if(!f)return null;
+  const s=String(f).trim();
+  let y,mo,d;
+  if(s.includes('-')){const p=s.split('-');y=p[0];mo=p[1];d=p[2];}
+  else if(s.includes('/')){
+    const p=s.split('/');
+    // detect DD/MM/YYYY vs MM/DD/YYYY: if first part > 12 it's DD
+    if(parseInt(p[0])>12){d=p[0];mo=p[1];y=p[2];}
+    else{mo=p[0];d=p[1];y=p[2];}
+  } else return null;
+  return {y:String(y).padStart(4,'0'), mo:String(mo).padStart(2,'0'), d:String(d).padStart(2,'0')};
+}
+function formatFecha(f){
+  const p=parseFecha(f); if(!p)return String(f||'—');
+  return `${p.d}/${p.mo}/${p.y}`;
+}
+function formatFechaLarga(f){
+  const p=parseFecha(f); if(!p)return String(f||'—');
+  const meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return `${parseInt(p.d)} de ${meses[parseInt(p.mo)-1]} de ${p.y}`;
+}
+function formatFechaCta(f){
+  // short: "27 mar 26"
+  const p=parseFecha(f); if(!p)return String(f||'—');
+  const m=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return `${parseInt(p.d)} ${m[parseInt(p.mo)-1]} ${p.y.slice(-2)}`;
+}
+function formatHora(h){
+  if(!h)return'—';
+  const s=String(h).trim();
+  // handle "HH:MM:SS" or "HH:MM"
+  return s.length>=5?s.substring(0,5):s;
+}
+function formatDT(f,h){
+  const fd=formatFechaCta(f);
+  const hd=formatHora(h);
+  return fd+(hd&&hd!='—'?' · '+hd:'');
+}
+
+function selectHistMachine(n){
+  selHvMachine=n;
+  ['hvb-2','hvb-3','hvb-all'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='hv-mach-btn';});
+  if(n===2)document.getElementById('hvb-2').className='hv-mach-btn hv-sel2';
+  else if(n===3)document.getElementById('hvb-3').className='hv-mach-btn hv-sel3';
+  else document.getElementById('hvb-all').className='hv-mach-btn hv-selA';
+  const panel=document.getElementById('hv-panel');
+  if(n===0){panel.style.display='none';document.getElementById('h-ext-f').value='';renderHistorial();return;}
+  panel.style.display='block';
+  const layout=document.getElementById('hv-layout');
+  const ec=document.getElementById('hv-ext-col'), ic=document.getElementById('hv-info-col');
+  // Remove old animation classes
+  ['slide-in-l','slide-in-r'].forEach(c=>{ec.classList.remove(c);ic.classList.remove(c);});
+  // Trigger reflow so animation restarts
+  void ec.offsetWidth;
+  if(n===2){
+    layout.style.flexDirection='row';
+    ec.classList.add('slide-in-l'); ic.classList.add('slide-in-r');
+  } else {
+    layout.style.flexDirection='row-reverse';
+    ec.classList.add('slide-in-r'); ic.classList.add('slide-in-l');
+  }
+  const lbl=document.getElementById('hv-ext-lbl');
+  lbl.textContent=`Extrusora N°${n}`;
+  lbl.style.color=n===2?'var(--ext2)':'var(--ext3)';
+  document.getElementById('hv-svg-wrap').innerHTML=getExtruderSVG(n);
+  updateHvPanel(n);
+  document.getElementById('h-ext-f').value=String(n);
+  renderHistorial();
+}
+
+function updateHvPanel(n){
+  const db=(_cache||[]).filter(r=>r.extrusora===n);
+  const sorted=[...db].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  const col=n===2?'var(--ext2)':'var(--ext3)';
+  const last20=sorted.slice(-20);
+  const last=sorted[sorted.length-1];
+  // Caudal stats
+  const avgC=db.length?(db.reduce((s,r)=>s+r.caudal,0)/db.length).toFixed(1):'—';
+  const avgNm=db.length?(db.reduce((s,r)=>s+r.nm,0)/db.length).toFixed(1):'—';
+  const avgAmp=db.length?(db.reduce((s,r)=>s+r.amp,0)/db.length).toFixed(1):'—';
+  const ultiC=last?last.caudal.toFixed(1):'—';
+  // Trend: compare last 5 vs prev 5
+  let trendHTML='';
+  if(sorted.length>=6){
+    const r5=sorted.slice(-5), p5=sorted.slice(-10,-5);
+    if(p5.length){
+      const avgR=r5.reduce((s,r)=>s+r.caudal,0)/r5.length;
+      const avgP=p5.reduce((s,r)=>s+r.caudal,0)/p5.length;
+      const pct=((avgR-avgP)/avgP*100).toFixed(1);
+      const cls=pct>0.5?'trend-up':pct<-0.5?'trend-dn':'trend-eq';
+      const arrow=pct>0.5?'↑':pct<-0.5?'↓':'→';
+      trendHTML=`<span class="kpi-trend ${cls}">${arrow} ${Math.abs(pct)}% vs ant.</span>`;
+    }
+  }
+  // Last measurement full date
+  const lastFechaLarga = last ? formatFechaLarga(last.fecha) : 'sin datos';
+  const lastHora = last ? formatHora(last.hora) : '';
+  const cfg2=getCfg();
+  const nmMaxN=n===2?(cfg2.nm2max||200):(cfg2.nm3max||250);
+  const nmPct=db.length?Math.round((parseFloat(avgNm)/nmMaxN)*100):0;
+  const nmBarC=nmPct>88?'var(--red)':nmPct>72?'var(--yellow)':'var(--green)';
+  document.getElementById('hv-mini-stats').innerHTML=`
+    <div class="kpi-card">
+      <div class="kpi-lbl">Caudal promedio</div>
+      <div class="kpi-row"><span class="kpi-val" style="color:${col}">${avgC}</span><span class="kpi-unit">kg/h</span>${trendHTML}</div>
+      <div class="kpi-sub">${db.length} registro${db.length!==1?'s':''} totales</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">Último caudal medido</div>
+      <div class="kpi-row"><span class="kpi-val">${ultiC}</span><span class="kpi-unit">kg/h</span></div>
+      <div class="kpi-sub" style="line-height:1.5">${lastFechaLarga}${lastHora?' · '+lastHora:''}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">N·m promedio</div>
+      <div class="kpi-row"><span class="kpi-val" style="color:#34d399">${avgNm}</span><span class="kpi-unit">N·m</span></div>
+      <div style="margin-top:6px">
+        <div class="pb-bg"><div class="pb" style="width:${Math.min(nmPct,100)}%;background:${nmBarC}"></div></div>
+        <div style="font-size:9px;color:var(--text3);margin-top:3px">${nmPct}% del umbral (${nmMaxN} N·m)</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-lbl">Amp promedio</div>
+      <div class="kpi-row"><span class="kpi-val" style="color:#4f8ef7">${avgAmp}</span><span class="kpi-unit">A</span></div>
+      <div class="kpi-sub">último: ${last?last.amp.toFixed(1):'—'} A</div>
+    </div>`;
+  const labels=last20.map(r=>formatDT(r.fecha,r.hora));
+  const cc=document.getElementById('sparkCaudal'), cn=document.getElementById('sparkNmAmp');
+  if(!cc||!cn)return;
+  const bgC=n===2?'rgba(167,139,250,.1)':'rgba(56,189,248,.1)';
+  const borderC=n===2?'#a78bfa':'#38bdf8';
+  if(sparkC)sparkC.destroy();
+  sparkC=new Chart(cc,{type:'line',data:{labels,datasets:[{
+    data:last20.map(r=>r.caudal),borderColor:borderC,backgroundColor:bgC,
+    tension:.4,pointRadius:3,pointBackgroundColor:borderC,borderWidth:2,fill:true}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} kg/h`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'#44475a',font:{size:8},maxRotation:30,maxTicksLimit:6}},
+        y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#7c809a',font:{size:9}},
+          title:{display:true,text:'kg/h',color:'#44475a',font:{size:8}}}}}});
+  if(sparkN)sparkN.destroy();
+  sparkN=new Chart(cn,{type:'line',data:{labels,datasets:[
+    {data:last20.map(r=>r.nm),label:'N·m',borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.06)',
+      tension:.4,pointRadius:2.5,pointBackgroundColor:'#34d399',borderWidth:1.8,fill:true},
+    {data:last20.map(r=>r.amp),label:'Amp',borderColor:'#4f8ef7',
+      tension:.4,pointRadius:2.5,borderWidth:1.8,fill:false,yAxisID:'y2'}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+ctx.parsed.y+(ctx.datasetIndex===1?' A':' N·m')}}},
+    scales:{
+      x:{grid:{display:false},ticks:{color:'#44475a',font:{size:8},maxRotation:30,maxTicksLimit:6}},
+      y:{grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'#34d399',font:{size:9}},
+        title:{display:true,text:'N·m',color:'#34d399',font:{size:8}}},
+      y2:{grid:{display:false},ticks:{color:'#4f8ef7',font:{size:9}},position:'right',
+        title:{display:true,text:'Amp',color:'#4f8ef7',font:{size:8}}}}}});
+}
+
+function getExtruderSVG(n){
+  const c=n===2?'#a78bfa':'#38bdf8';
+  const cD=n===2?'rgba(167,139,250,.4)':'rgba(56,189,248,.4)';
+  const cF=n===2?'rgba(167,139,250,.07)':'rgba(56,189,248,.07)';
+  const sc=n===2?'screw-flow-r':'screw-flow-l';
+  const flip=n===3?'transform="scale(-1,1) translate(-480,0)"':'';
+  return `<svg viewBox="0 0 480 190" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-height:182px;display:block">
+<defs>
+  <linearGradient id="brl${n}" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#1a1c25"/><stop offset="55%" stop-color="#22232e"/>
+    <stop offset="85%" stop-color="#2a1c1c"/><stop offset="100%" stop-color="#2e1414"/>
+  </linearGradient>
+  <filter id="gw${n}"><feGaussianBlur stdDeviation="2.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g ${flip}>
+  <rect x="12" y="90" width="57" height="70" rx="5" fill="#13141a" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+  <rect x="17" y="95" width="47" height="60" rx="3" fill="#1b1d27"/>
+  <line x1="22" y1="108" x2="59" y2="108" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+  <line x1="22" y1="119" x2="59" y2="119" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+  <line x1="22" y1="130" x2="59" y2="130" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+  <line x1="22" y1="141" x2="59" y2="141" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+  <text x="40" y="173" text-anchor="middle" fill="rgba(255,255,255,.2)" font-size="7" font-family="monospace">MOTOR</text>
+  <rect x="67" y="103" width="17" height="52" rx="3" fill="#1e2028" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+  <rect x="82" y="98" width="290" height="62" rx="7" fill="url(#brl${n})" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+  <rect x="84" y="99" width="286" height="15" rx="5" fill="rgba(255,255,255,.03)"/>
+  <line x1="140" y1="100" x2="140" y2="158" stroke="rgba(255,255,255,.06)" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="198" y1="100" x2="198" y2="158" stroke="rgba(255,255,255,.06)" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="256" y1="100" x2="256" y2="158" stroke="rgba(255,255,255,.06)" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="314" y1="100" x2="314" y2="158" stroke="rgba(255,255,255,.06)" stroke-width="1" stroke-dasharray="3,3"/>
+  <rect x="84" y="100" width="54" height="58" fill="rgba(251,191,36,.04)"/>
+  <rect x="142" y="100" width="54" height="58" fill="rgba(251,155,36,.05)"/>
+  <rect x="200" y="100" width="54" height="58" fill="rgba(240,100,84,.06)"/>
+  <rect x="258" y="100" width="54" height="58" fill="rgba(240,70,55,.08)"/>
+  <rect x="316" y="100" width="54" height="58" fill="rgba(240,50,50,.1)"/>
+  <line x1="86" y1="129" x2="370" y2="129" stroke="rgba(255,255,255,.09)" stroke-width="2.5" stroke-dasharray="12,10" class="${sc}"/>
+  <text x="111" y="155" text-anchor="middle" fill="rgba(251,191,36,.45)" font-size="7" font-family="monospace">Z1</text>
+  <text x="169" y="155" text-anchor="middle" fill="rgba(251,155,36,.45)" font-size="7" font-family="monospace">Z2</text>
+  <text x="227" y="155" text-anchor="middle" fill="rgba(240,100,84,.45)" font-size="7" font-family="monospace">Z3</text>
+  <text x="285" y="155" text-anchor="middle" fill="rgba(240,70,55,.45)" font-size="7" font-family="monospace">Z4</text>
+  <text x="340" y="155" text-anchor="middle" fill="rgba(240,50,50,.45)" font-size="7" font-family="monospace">CAB</text>
+  <polygon points="98,50 146,50 137,100 107,100" fill="#13141a" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+  <polygon points="101,53 143,53 135,98 109,98" fill="#1b1d27"/>
+  <rect x="93" y="42" width="58" height="11" rx="3" fill="#13141a" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+  <ellipse cx="122" cy="70" rx="13" ry="4" fill="rgba(255,255,255,.05)"/>
+  <ellipse cx="118" cy="81" rx="9" ry="3" fill="rgba(255,255,255,.04)"/>
+  <rect x="369" y="83" width="24" height="78" rx="5" fill="#13141a" stroke="${cD}" stroke-width="1"/>
+  <rect x="360" y="98" width="13" height="50" rx="3" fill="#1a1c25" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+  <circle cx="381" cy="88" r="11" fill="#1a1c25" stroke="${cD}" stroke-width="1.5" filter="url(#gw${n})"/>
+  <circle cx="381" cy="88" r="5" fill="#13141a" stroke="${c}" stroke-width="1.5"/>
+  <ellipse cx="381" cy="161" rx="22" ry="6" fill="none" stroke="${cD}" stroke-width="1.5"/>
+  <ellipse cx="381" cy="161" rx="14" ry="4" fill="none" stroke="${c}" stroke-width=".8" opacity=".5"/>
+  <ellipse cx="381" cy="30" rx="19" ry="56" fill="${cF}" stroke="${c}" stroke-width="1.2" class="bubble-anim" filter="url(#gw${n})"/>
+  <rect x="361" y="-3" width="40" height="8" rx="4" fill="#1a1c25" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+  <circle cx="381" cy="1" r="3" fill="#13141a" stroke="${cD}" stroke-width="1"/>
+  <text x="220" y="183" text-anchor="middle" fill="${cD}" font-size="9" font-family="monospace">&#8212; &#8212; &#8594; flujo material &#8594;</text>
+</g></svg>`;
+}
+
 function resetFiltros(){
   ['h-ext-f','h-mat-f'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   const a=document.getElementById('h-ancho-f');if(a)a.value='';
@@ -730,21 +1092,51 @@ function renderHistorial(){
 
   const se=document.getElementById('h-stats');
   if(se){
+    const e2recs=db.filter(r=>r.extrusora===2), e3recs=db.filter(r=>r.extrusora===3);
     const avgNm=db.length?(db.reduce((s,r)=>s+r.nm,0)/db.length).toFixed(1):'—';
-    const e2=db.filter(r=>r.extrusora===2).length,e3=db.filter(r=>r.extrusora===3).length;
+    const avgC=db.length?(db.reduce((s,r)=>s+r.caudal,0)/db.length).toFixed(1):'—';
+    const last=db.length?[...db].sort((a,b)=>String(b.id).localeCompare(String(a.id)))[0]:null;
+    const lastStr=last?formatFecha(last.fecha)+' · '+formatHora(last.hora):'sin datos';
+    const cfg2max=getCfg().nm2max||200, cfg3max=getCfg().nm3max||250;
+    const pct2=e2recs.length?(e2recs.reduce((s,r)=>s+r.nm,0)/e2recs.length/cfg2max*100).toFixed(0):0;
+    const pct3=e3recs.length?(e3recs.reduce((s,r)=>s+r.nm,0)/e3recs.length/cfg3max*100).toFixed(0):0;
+    const barC=p=>p>88?'var(--red)':p>72?'var(--yellow)':'var(--green)';
     se.innerHTML=`
-      <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${db.length}</div></div>
-      <div class="stat"><div class="stat-lbl">Ext. 2</div><div class="stat-val" style="color:var(--ext2)">${e2}</div></div>
-      <div class="stat"><div class="stat-lbl">Ext. 3</div><div class="stat-val" style="color:var(--ext3)">${e3}</div></div>
-      <div class="stat"><div class="stat-lbl">N·m prom.</div><div class="stat-val">${avgNm}</div></div>`;
+      <div class="stat">
+        <div class="stat-lbl">Total registros</div>
+        <div class="stat-val">${db.length}</div>
+        <div class="stat-sub">Último: ${lastStr}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Ext. N°2 · ${e2recs.length} reg.</div>
+        <div class="stat-val" style="color:var(--ext2)">${e2recs.length?(e2recs.reduce((s,r)=>s+r.caudal,0)/e2recs.length).toFixed(1):'—'}</div>
+        <div class="stat-sub">kg/h prom.</div>
+        <div class="pb-bg" style="margin-top:6px"><div class="pb" style="width:${pct2}%;background:${barC(pct2)}"></div></div>
+        <div class="stat-sub" style="margin-top:2px">N·m: ${pct2}% del umbral</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Ext. N°3 · ${e3recs.length} reg.</div>
+        <div class="stat-val" style="color:var(--ext3)">${e3recs.length?(e3recs.reduce((s,r)=>s+r.caudal,0)/e3recs.length).toFixed(1):'—'}</div>
+        <div class="stat-sub">kg/h prom.</div>
+        <div class="pb-bg" style="margin-top:6px"><div class="pb" style="width:${pct3}%;background:${barC(pct3)}"></div></div>
+        <div class="stat-sub" style="margin-top:2px">N·m: ${pct3}% del umbral</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">N·m prom. global</div>
+        <div class="stat-val">${avgNm}</div>
+        <div class="stat-sub">Caudal prom: ${avgC} kg/h</div>
+      </div>`;
   }
 
   const tbody=document.getElementById('h-tbody');
   if(!fil.length){
-    tbody.innerHTML='<tr><td colspan="18" style="text-align:center;padding:28px;color:var(--text3)">Sin registros</td></tr>';
+    tbody.innerHTML='<tr><td colspan="17" style="text-align:center;padding:28px;color:var(--text3)">Sin registros</td></tr>';
   } else {
     tbody.innerHTML=fil.map(r=>`<tr>
-      <td>${r.fecha}</td><td>${r.hora}</td>
+      <td style="white-space:nowrap">
+        <span style="font-weight:500">${formatFecha(r.fecha)}</span>
+        <span style="color:var(--text3);font-size:10px;margin-left:5px">${formatHora(r.hora)}</span>
+      </td>
       <td><span class="badge ${r.extrusora===2?'b-ext2':'b-ext3'}">N°${r.extrusora}</span></td>
       <td>${r.tempClima}°C</td>
       <td>${r.tableroMin}</td><td>${r.tableroMax}</td>
@@ -760,7 +1152,7 @@ function renderHistorial(){
   const ctx=document.getElementById('chartH');if(!ctx)return;
   if(chartH)chartH.destroy();
   chartH=new Chart(ctx,{type:'line',
-    data:{labels:last30.map(r=>r.fecha.slice(5)+' '+r.hora.slice(0,5)),
+    data:{labels:last30.map(r=>formatFecha(r.fecha).slice(0,6)+' '+formatHora(r.hora)),
       datasets:[
         {label:'N·m',data:last30.map(r=>r.nm),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5},
         {label:'Amp',data:last30.map(r=>r.amp),borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.05)',tension:.35,pointRadius:2.5,borderWidth:1.5,yAxisID:'y2'}
@@ -1186,6 +1578,7 @@ async function init(){
   const w=document.getElementById('cfg-warning');
   if(w)w.style.display=cfg.url?'none':'block';
   await fetchClima();
+  await syncConfigFromSheets();
   await cargarDatos();
   loaderHide();
   // Restaurar lastEntryTime desde el registro más reciente
