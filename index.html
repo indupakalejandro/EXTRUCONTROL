@@ -1504,40 +1504,75 @@ Respondé SOLO con JSON válido (sin markdown):
   }
 }
 
+// ── Robust JSON extractor ──
+// Handles: markdown fences, trailing commas, JS comments, single quotes
+function parseAIJson(raw){
+  if(!raw) throw new Error('Respuesta vacía de la IA.');
+  // Extract outermost { ... }
+  const first=raw.indexOf('{'), last=raw.lastIndexOf('}');
+  if(first===-1||last===-1) throw new Error('La IA no devolvió un objeto JSON. Respuesta: '+raw.substring(0,300));
+  let s=raw.substring(first, last+1);
+  // Remove // comments
+  s=s.replace(/\/\/[^\n\r]*/g,'');
+  // Remove /* */ comments
+  s=s.replace(/\/\*[\s\S]*?\*\//g,'');
+  // Remove trailing commas before } or ]
+  s=s.replace(/,(\s*[}\]])/g,'$1');
+  // Try direct parse first
+  try{ return JSON.parse(s); }catch(_){}
+  // Replace single-quoted strings with double-quoted
+  s=s.replace(/'([^'\\]*(\\.[^'\\]*)*)'/g,(m,g)=>'"'+g.replace(/"/g,'\\"')+'"');
+  try{ return JSON.parse(s); }catch(e){
+    // Last resort: field-by-field regex extraction
+    console.warn('JSON full fallback. Raw:', s.substring(0,400));
+    const num=(k,fb=0)=>{ const m=s.match(new RegExp('"'+k+'"\\s*:\\s*([\\d.]+)')); return m?parseFloat(m[1]):fb; };
+    const str=(k,fb='')=>{ const m=s.match(new RegExp('"'+k+'"\\s*:\\s*"([^"]*)"')); return m?m[1]:fb; };
+    return {
+      extrusora:num('extrusora',2), hz:num('hz'), turbina:num('turbina'),
+      trenTiro:num('trenTiro'), tableroMin:num('tableroMin'), tableroMax:num('tableroMax'),
+      matrizMin:num('matrizMin'), matrizMax:num('matrizMax'),
+      nm_esperado:num('nm_esperado'), amp_esperado:num('amp_esperado'), caudal_esperado:num('caudal_esperado'),
+      hz_razon:str('hz_razon'), tren_razon:str('tren_razon'), temp_razon:str('temp_razon'),
+      confianza:str('confianza','media'),
+      razonamiento:str('razonamiento','Razonamiento no disponible — error de parseo.')
+    };
+  }
+}
+
 async function callAnthropic(key,prompt){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
   });
   const d=await r.json();
   if(d.error) throw new Error(d.error.message);
-  const text=d.content?.[0]?.text||'';
-  return JSON.parse(text.replace(/```json|```/g,'').trim());
+  return parseAIJson(d.content?.[0]?.text||'');
 }
 
 async function callOpenAI(key,prompt){
   const r=await fetch('https://api.openai.com/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({model:'gpt-4o',max_tokens:800,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'gpt-4o',max_tokens:1500,messages:[{role:'user',content:prompt}]})
   });
   const d=await r.json();
   if(d.error) throw new Error(d.error.message);
-  const text=d.choices?.[0]?.message?.content||'';
-  return JSON.parse(text.replace(/```json|```/g,'').trim());
+  return parseAIJson(d.choices?.[0]?.message?.content||'');
 }
 
 async function callGemini(key,prompt){
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`,{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:1500}})
+    body:JSON.stringify({
+      contents:[{parts:[{text:prompt}]}],
+      generationConfig:{maxOutputTokens:1500, responseMimeType:'application/json'}
+    })
   });
   const d=await r.json();
   if(d.error) throw new Error(d.error.message);
-  const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  return JSON.parse(text.replace(/```json|```/g,'').trim());
+  return parseAIJson(d.candidates?.[0]?.content?.parts?.[0]?.text||'');
 }
 
 // ══════════════════════════════════════════════
