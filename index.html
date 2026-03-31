@@ -1258,14 +1258,12 @@ function buildResultHTML(matches,ancho,esp,mat,ext,ampliado,esIA){
 
 // Weighted similarity score between a record and the target query
 // Weights: ancho 40%, espesor 25%, material 20%, extrusora 15%
-function similarityScore(r, ancho, esp, mat, extB){
+function similarityScore(r, ancho, esp, mat){
   const dAncho = ancho>0 ? Math.abs(r.ancho-ancho)/ancho : 0;
   const dEsp   = esp>0   ? Math.abs(r.espesor-esp)/esp   : 0;
   const matOk  = !mat || r.material===mat ? 1 : 0;
-  const extOk  = !extB  || String(r.extrusora)===extB ? 1 : 0;
-  // Distance score (lower = better), converted to similarity
-  const dist = 0.40*dAncho + 0.25*dEsp + 0.20*(1-matOk) + 0.15*(1-extOk);
-  return 1/(1+dist*10); // sigmoid-like conversion
+  const dist = 0.50*dAncho + 0.30*dEsp + 0.20*(1-matOk);
+  return 1/(1+dist*10);
 }
 
 // Simple linear regression: returns {slope, intercept, r2}
@@ -1293,10 +1291,14 @@ function detectRelationship(xs, ys){
   return {type,r2Lin:lin.r2,r2Exp:exp.r2,slopeLin:lin.slope,slopeExp:exp.slope};
 }
 
-function buildAnalysis(db, ancho, esp, mat, extB, tempActual){
-  // 1. SIMILARITY RANKING — top 20 most similar records
+function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
+  // CRITICAL: strict machine isolation — never mix data from different extrusoras
+  const db = extB ? dbRaw.filter(r=>String(r.extrusora)===String(extB)) : dbRaw;
+
+  // 1. SIMILARITY RANKING — weight: ancho 50%, espesor 30%, material 20%
+  //    Extrusora is already hard-filtered above, not soft-scored
   const scored = db
-    .map(r=>({...r, _sim: similarityScore(r,ancho,esp,mat,extB)}))
+    .map(r=>({...r, _sim: similarityScore(r,ancho,esp,mat)}))
     .sort((a,b)=>b._sim-a._sim);
   const top20 = scored.slice(0,20);
   const top5  = scored.slice(0,5);
@@ -1335,7 +1337,7 @@ function buildAnalysis(db, ancho, esp, mat, extB, tempActual){
     +(corrTempNm.slope*tempActual+corrTempNm.intercept).toFixed(1) : nmPredBase.toFixed(1);
 
   // 5. MATERIAL PATTERNS (from full db)
-  const matRecs = mat ? db.filter(r=>r.material===mat) : [];
+  const matRecs = mat ? db.filter(r=>r.material===mat) : db.slice();  // already extrusora-filtered
   const matStats = matRecs.length ? {
     avgHz: +(matRecs.reduce((s,r)=>s+r.velocidadHz,0)/matRecs.length).toFixed(1),
     avgNm: +(matRecs.reduce((s,r)=>s+r.nm,0)/matRecs.length).toFixed(1),
@@ -1381,126 +1383,109 @@ async function sugerirConIA(){
   const extB   =document.getElementById('c-ext')?.value||'';
   const resEl  =document.getElementById('consulta-res');
   if(!ancho){snack('Ingresá el ancho objetivo.');return;}
-  const db=_cache||[];
-  if(!db.length){resEl.innerHTML=alerta('blue','ℹ','Sin historial','Necesitás tener al menos algunos registros para que la IA pueda interpolar.');return;}
+  const dbAll=_cache||[];
+  if(!dbAll.length){resEl.innerHTML=alerta('blue','ℹ','Sin historial','Necesitás tener al menos algunos registros para que la IA pueda interpolar.');return;}
+  // CRITICAL: never mix extrusora 2 and 3 data — filter strictly when one is selected
+  const db = extB ? dbAll.filter(r=>String(r.extrusora)===String(extB)) : dbAll;
+  if(extB && !db.length){resEl.innerHTML=alerta('yellow','⚠','Sin datos para esa extrusora','No hay registros de Extrusora N°'+extB+'. Registrá algunos trabajos primero.');return;}
 
-  resEl.innerHTML=`<div class="ai-loading"><div class="ai-dots"><span></span><span></span><span></span></div> Analizando patrones — ${db.length} registros...</div>`;
+  resEl.innerHTML=`<div class="ai-loading"><div class="ai-dots"><span></span><span></span><span></span></div> Analizando ${db.length} registros${extB?' de Ext. N°'+extB:''}...</div>`;
 
   // ── PRE-COMPUTE ANALYSIS IN JS ──
   const tempActual = climaActual?.temp ?? null;
   const analysis = buildAnalysis(db, ancho, esp, mat, extB, tempActual);
 
-  const prompt=`Sos un experto en extrusoras de soplado de film plástico. Ya se realizó un análisis estadístico del historial. Tu trabajo es interpretar ese análisis y dar una recomendación precisa de seteo.
-
-══ PARÁMETROS AJUSTABLES vs MEDIDOS ══
-AJUSTAR → Hz, tren de tiro, turbina, tablero min/max, matriz min/max
-MEDIR (resultados, NO mandos) → N·m, Amp, caudal kg/h
-Nunca digas "ajustá el caudal" ni "subí el Amp".
-
-══ ANÁLISIS PRE-CALCULADO ══
-${JSON.stringify(analysis, null, 2)}
-
-══ CONSULTA ══
-Ancho objetivo: ${ancho} mm
-Espesor objetivo: ${esp||'no especificado'} µm
-Material: ${mat||'no especificado'}
-Extrusora preferida: ${extB?'N°'+extB:'sin preferencia'}
-Temperatura ambiente actual: ${tempActual??'desconocida'} °C
-
-══ INSTRUCCIONES CLAVE ══
-1. Usá principalmente los 5 registros más similares (topRegistros) como base.
-2. Para Hz: NO uses el promedio. Sugerí el valor del percentil 75 o superior (analysis.hz.sugerido = ${analysis.hz.sugerido}). Justificá por qué un Hz más alto es preferible si el historial lo respalda.
-3. Para tren de tiro: si la relación motor↔tren es ${analysis.motorTren.relacion} (R²=${analysis.motorTren.r2Lin}), usá esa regresión. El tren predicho para Hz ${analysis.hz.sugerido} es ${analysis.motorTren.trenPredecho??'no disponible'}.
-4. Para N·m esperado: usá la predicción ajustada por temperatura actual (${analysis.tempNm.nmPredActual}). La sensibilidad es ${analysis.tempNm.slopeNmPorGrado} N·m/°C.
-5. Para temperaturas: si hay estadísticas por material, úsalas como guía (analysis.material).
-6. Si la confianza es baja por pocos datos similares, aclaralo en el razonamiento.
-
-Respondé SOLO con JSON válido (sin markdown):
-{
-  "extrusora": 2,
-  "hz": 0,
-  "turbina": 0,
-  "trenTiro": 0,
-  "tableroMin": 0,
-  "tableroMax": 0,
-  "matrizMin": 0,
-  "matrizMax": 0,
-  "nm_esperado": 0,
-  "amp_esperado": 0,
-  "caudal_esperado": 0,
-  "hz_razon": "1 oración: por qué este Hz",
-  "tren_razon": "1 oración: relación y valor",
-  "temp_razon": "1 oración: ajuste por temperatura",
-  "confianza": "alta|media|baja",
-  "razonamiento": "máximo 3 oraciones: qué setear y por qué"
-}`;
+  // Prompt returns ONLY 12 numbers — never truncates
+  const extNum = extB ? parseInt(extB) : (analysis.topRegistros[0]?.ext || 2);
+  const topStr = analysis.topRegistros.map(r=>`Hz:${r.hz} turb:${r.turb} tren:${r.tren} tabMin:${r.tabMin} tabMax:${r.tabMax} matMin:${r.matMin} matMax:${r.matMax} Nm:${r.nm} Amp:${r.amp} caudal:${r.caudal} clima:${r.clima}C`).join(' | ');
+  const matLine = analysis.material ? `mat_Hz=${analysis.material.avgHz} mat_tabMax=${analysis.material.avgTabMax} mat_matMax=${analysis.material.avgMatMax}` : '';
+  const prompt=`Extrusora soplado film N\u00b0${extNum}. Solo JSON numericos sin texto.
+Registros similares: ${topStr}
+Hz_P75=${analysis.hz.sugerido} Hz_avg=${analysis.hz.avg} tren_pred=${analysis.motorTren.trenPredecho??'null'} relMotTren=${analysis.motorTren.relacion} Nm_pred=${analysis.tempNm.nmPredActual} tempActual=${tempActual??'null'}C ${matLine}
+Reglas: hz usar ${analysis.hz.sugerido} (P75 no promedio). tren usar ${analysis.motorTren.trenPredecho??'interpolar'}. conf: 1=alta 2=media 3=baja.
+Responde UNICAMENTE con este JSON reemplazando los ceros: {"ext":${extNum},"hz":0,"turb":0,"tren":0,"tabMin":0,"tabMax":0,"matMin":0,"matMax":0,"nm":0,"amp":0,"caudal":0,"conf":2}`;
 
   try{
-    let params=null;
-    if(cfg.aiProvider==='anthropic') params=await callAnthropic(cfg.aiKey,prompt);
-    else if(cfg.aiProvider==='openai') params=await callOpenAI(cfg.aiKey,prompt);
-    else if(cfg.aiProvider==='gemini') params=await callGemini(cfg.aiKey,prompt);
+    let raw=null;
+    if(cfg.aiProvider==='anthropic') raw=await callAnthropic(cfg.aiKey,prompt);
+    else if(cfg.aiProvider==='openai') raw=await callOpenAI(cfg.aiKey,prompt);
+    else if(cfg.aiProvider==='gemini') raw=await callGemini(cfg.aiKey,prompt);
+    if(!raw) throw new Error('Sin respuesta de la IA.');
 
-    if(!params) throw new Error('No se obtuvo respuesta de la IA.');
+    const p={
+      extrusora: raw.ext||extNum,
+      hz:        raw.hz||analysis.hz.sugerido,
+      turbina:   raw.turb||0,
+      trenTiro:  raw.tren||(analysis.motorTren.trenPredecho||0),
+      tableroMin:raw.tabMin||0, tableroMax:raw.tabMax||0,
+      matrizMin: raw.matMin||0, matrizMax: raw.matMax||0,
+      nm_esperado:    raw.nm||(analysis.tempNm.nmPredActual||0),
+      amp_esperado:   raw.amp||0,
+      caudal_esperado:raw.caudal||0,
+      confianza: ['alta','media','baja'][((raw.conf||2)-1)]||'media'
+    };
 
-    const confColor={alta:'var(--green)',media:'var(--yellow)',baja:'var(--orange)'}[params.confianza]||'var(--text2)';
+    const confColor={alta:'var(--green)',media:'var(--yellow)',baja:'var(--orange)'}[p.confianza]||'var(--text2)';
     const synth=[{
-      velocidadHz:params.hz,nm:params.nm_esperado,amp:params.amp_esperado,
-      caudal:params.caudal_esperado,turbina:params.turbina,trenTiro:params.trenTiro,
-      tableroMin:params.tableroMin,tableroMax:params.tableroMax,
-      matrizMin:params.matrizMin,matrizMax:params.matrizMax,
-      extrusora:params.extrusora,tempClima:climaActual?.temp||20,
-      ancho,espesor:esp,material:mat
+      velocidadHz:p.hz, nm:p.nm_esperado, amp:p.amp_esperado,
+      caudal:p.caudal_esperado, turbina:p.turbina, trenTiro:p.trenTiro,
+      tableroMin:p.tableroMin, tableroMax:p.tableroMax,
+      matrizMin:p.matrizMin, matrizMax:p.matrizMax,
+      extrusora:p.extrusora, tempClima:climaActual?.temp||20,
+      ancho, espesor:esp, material:mat
     }];
 
-    // Build inline reasoning notes for Hz and tren
-    const hzNote  = params.hz_razon   ? `<div style="font-size:9px;color:rgba(196,181,253,.55);margin-top:3px;line-height:1.4">${params.hz_razon}</div>`:'';
-    const trenNote = params.tren_razon ? `<div style="font-size:9px;color:rgba(196,181,253,.55);margin-top:3px;line-height:1.4">${params.tren_razon}</div>`:'';
-    const tempNote = params.temp_razon ? `<div style="font-size:9px;color:rgba(52,211,153,.55);margin-top:3px;line-height:1.4">🌡 ${params.temp_razon}</div>`:'';
+    // Reasoning built from JS analysis — no AI text needed
+    const relTxt = analysis.motorTren.relacion!=='insuficiente'
+      ? `Relaci\u00f3n motor\u2194tren <strong>${analysis.motorTren.relacion}</strong> (R\u00b2=${analysis.motorTren.r2Lin}). Tren predicho para ${p.hz} Hz: ${p.trenTiro}.`
+      : 'Pocos datos para determinar la relaci\u00f3n motor\u2194tren \u2014 valor interpolado del historial.';
+    const tempTxt = analysis.tempNm.slopeNmPorGrado!=='no determinado'
+      ? `Sensibilidad N\u00b7m: <strong>${analysis.tempNm.slopeNmPorGrado} N\u00b7m/\u00b0C</strong>. A ${tempActual??'?'}\u00b0C se esperan <strong>${p.nm_esperado} N\u00b7m</strong>.`
+      : `N\u00b7m esperado basado en promedio del historial: ${p.nm_esperado} N\u00b7m.`;
+    const hzTxt = `Hz sugerido: <strong>${p.hz}</strong> (percentil 75 de registros similares de Ext. N\u00b0${p.extrusora} \u2014 mayor que el promedio ${analysis.hz.avg} Hz).`;
 
     resEl.innerHTML=`
       <div class="ai-block">
-        <h3>✦ Sugerencia de IA
-          <span style="font-size:10px;font-family:var(--mono);color:${confColor};margin-left:6px">confianza: ${params.confianza}</span>
-          <span style="font-size:9px;color:rgba(196,181,253,.4);margin-left:8px">· ${analysis.meta.registrosSimilares} reg. similares analizados</span>
+        <h3>&#10022; Sugerencia de IA
+          <span style="font-size:10px;font-family:var(--mono);color:${confColor};margin-left:6px">confianza: ${p.confianza}</span>
+          <span style="font-size:9px;color:rgba(196,181,253,.35);margin-left:8px">&#183; Ext. N&#176;${p.extrusora} &#183; ${analysis.meta.registrosSimilares} reg.</span>
         </h3>
-        <div style="font-size:9px;color:rgba(196,181,253,.5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Parámetros a setear en la máquina</div>
+        <div style="font-size:9px;color:rgba(196,181,253,.5);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Par&#225;metros a setear en la m&#225;quina</div>
         <div class="ai-param-grid">
           <div class="ai-param" style="border:1px solid rgba(196,181,253,.35)">
-            <div class="ai-param-name">Hz motor <span style="color:rgba(52,211,153,.7)">↑ P75</span></div>
-            <div class="ai-param-val" style="color:#e9d5ff">${params.hz}</div>
-            <div class="ai-param-unit">Hz</div>
-            ${hzNote}
+            <div class="ai-param-name">Hz motor <span style="color:rgba(52,211,153,.7);font-size:8px">&#8593; P75</span></div>
+            <div class="ai-param-val" style="color:#e9d5ff">${p.hz}</div>
+            <div class="ai-param-unit">Hz &#183; prom. era ${analysis.hz.avg}</div>
           </div>
           <div class="ai-param">
             <div class="ai-param-name">Tren de tiro</div>
-            <div class="ai-param-val">${params.trenTiro}</div>
-            ${trenNote}
+            <div class="ai-param-val">${p.trenTiro}</div>
+            <div class="ai-param-unit">${analysis.motorTren.relacion} &#183; R&#178;=${analysis.motorTren.r2Lin}</div>
           </div>
-          <div class="ai-param"><div class="ai-param-name">Turbina</div><div class="ai-param-val">${params.turbina}</div><div class="ai-param-unit">/50</div></div>
-          <div class="ai-param"><div class="ai-param-name">Tablero</div><div class="ai-param-val">${params.tableroMin}–${params.tableroMax}</div><div class="ai-param-unit">°C</div></div>
-          <div class="ai-param"><div class="ai-param-name">Matriz</div><div class="ai-param-val">${params.matrizMin}–${params.matrizMax}</div><div class="ai-param-unit">°C</div></div>
-          <div class="ai-param"><div class="ai-param-name">Extrusora</div><div class="ai-param-val" style="color:${params.extrusora===2?'var(--ext2)':'var(--ext3)'}">N°${params.extrusora}</div></div>
+          <div class="ai-param"><div class="ai-param-name">Turbina</div><div class="ai-param-val">${p.turbina}</div><div class="ai-param-unit">/50</div></div>
+          <div class="ai-param"><div class="ai-param-name">Tablero</div><div class="ai-param-val">${p.tableroMin}&#8211;${p.tableroMax}</div><div class="ai-param-unit">&#176;C</div></div>
+          <div class="ai-param"><div class="ai-param-name">Matriz</div><div class="ai-param-val">${p.matrizMin}&#8211;${p.matrizMax}</div><div class="ai-param-unit">&#176;C</div></div>
+          <div class="ai-param"><div class="ai-param-name">Extrusora</div><div class="ai-param-val" style="color:${p.extrusora===2?'var(--ext2)':'var(--ext3)'}">N&#176;${p.extrusora}</div></div>
         </div>
-        <div style="font-size:9px;color:rgba(196,181,253,.4);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;padding-top:10px;border-top:1px solid rgba(167,139,250,.1)">Valores esperados como resultado (no se ajustan)</div>
+        <div style="font-size:9px;color:rgba(196,181,253,.4);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;padding-top:10px;border-top:1px solid rgba(167,139,250,.12)">Valores esperados como resultado (no se ajustan)</div>
         <div class="ai-param-grid">
-          <div class="ai-param" style="opacity:.75">
-            <div class="ai-param-name">N·m esperado</div>
-            <div class="ai-param-val">${params.nm_esperado}</div><div class="ai-param-unit">N·m</div>
-            ${tempNote}
+          <div class="ai-param" style="opacity:.8">
+            <div class="ai-param-name">N&#183;m esperado</div>
+            <div class="ai-param-val">${p.nm_esperado}</div>
+            <div class="ai-param-unit">N&#183;m &#183; a ${tempActual??'?'}&#176;C</div>
           </div>
-          <div class="ai-param" style="opacity:.75"><div class="ai-param-name">Amp esperado</div><div class="ai-param-val">${params.amp_esperado}</div><div class="ai-param-unit">A</div></div>
-          <div class="ai-param" style="opacity:.75"><div class="ai-param-name">Caudal esperado</div><div class="ai-param-val">${params.caudal_esperado}</div><div class="ai-param-unit">kg/h</div></div>
+          <div class="ai-param" style="opacity:.8"><div class="ai-param-name">Amp esperado</div><div class="ai-param-val">${p.amp_esperado}</div><div class="ai-param-unit">A</div></div>
+          <div class="ai-param" style="opacity:.8"><div class="ai-param-name">Caudal esperado</div><div class="ai-param-val">${p.caudal_esperado}</div><div class="ai-param-unit">kg/h</div></div>
         </div>
-        <div style="margin:10px 0 8px;padding:8px 12px;background:rgba(167,139,250,.06);border-radius:6px;border-left:2px solid rgba(167,139,250,.3)">
-          <div style="font-size:9px;color:rgba(196,181,253,.5);text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">Patrón motor ↔ tren detectado</div>
-          <span style="font-size:11px;color:var(--text2)">Relación <strong style="color:#c4b5fd">${analysis.motorTren.relacion}</strong> · R²=${analysis.motorTren.r2Lin} · sensibilidad N·m/°C: ${analysis.tempNm.slopeNmPorGrado}</span>
+        <div style="margin:12px 0 0;display:flex;flex-direction:column;gap:6px">
+          <div style="padding:8px 12px;background:rgba(167,139,250,.05);border-radius:6px;border-left:2px solid rgba(167,139,250,.3);font-size:11px;color:var(--text2);line-height:1.6">${hzTxt}</div>
+          <div style="padding:8px 12px;background:rgba(56,189,248,.05);border-radius:6px;border-left:2px solid rgba(56,189,248,.2);font-size:11px;color:var(--text2);line-height:1.6">${relTxt}</div>
+          <div style="padding:8px 12px;background:rgba(52,211,153,.05);border-radius:6px;border-left:2px solid rgba(52,211,153,.2);font-size:11px;color:var(--text2);line-height:1.6">&#127777;&#65039; ${tempTxt}</div>
         </div>
-        <div class="ai-reasoning" style="margin-top:10px"><strong style="color:#c4b5fd;font-size:10px;letter-spacing:.5px;text-transform:uppercase">Razonamiento completo:</strong><br>${params.razonamiento}</div>
       </div>
     `+buildResultHTML(synth,ancho,esp,mat,extB,false,true);
   }catch(e){
-    resEl.innerHTML=alerta('red','✗','Error de IA',e.message);
+    resEl.innerHTML=alerta('red','\u2717','Error de IA',e.message);
   }
 }
 
@@ -1567,7 +1552,7 @@ async function callGemini(key,prompt){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       contents:[{parts:[{text:prompt}]}],
-      generationConfig:{maxOutputTokens:2048, responseMimeType:'application/json'}
+      generationConfig:{maxOutputTokens:2048}
     })
   });
   const d=await r.json();
