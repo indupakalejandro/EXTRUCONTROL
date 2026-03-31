@@ -1428,11 +1428,11 @@ Respondé SOLO con JSON válido (sin markdown):
   "nm_esperado": 0,
   "amp_esperado": 0,
   "caudal_esperado": 0,
-  "hz_razon": "por qué este Hz (no el promedio)",
-  "tren_razon": "relación motor-tren detectada y cómo se llegó al valor",
-  "temp_razon": "ajuste de N·m por temperatura",
+  "hz_razon": "1 oración: por qué este Hz",
+  "tren_razon": "1 oración: relación y valor",
+  "temp_razon": "1 oración: ajuste por temperatura",
   "confianza": "alta|media|baja",
-  "razonamiento": "síntesis completa: qué setear y por qué, con los valores esperados como resultantes"
+  "razonamiento": "máximo 3 oraciones: qué setear y por qué"
 }`;
 
   try{
@@ -1510,7 +1510,7 @@ function parseAIJson(raw){
   if(!raw) throw new Error('Respuesta vacía de la IA.');
   // Extract outermost { ... }
   const first=raw.indexOf('{'), last=raw.lastIndexOf('}');
-  if(first===-1||last===-1) throw new Error('La IA no devolvió un objeto JSON. Respuesta: '+raw.substring(0,300));
+  if(first===-1||last===-1) throw new Error('JSON incompleto (respuesta cortada). Primeros 400 chars: '+raw.substring(0,400));
   let s=raw.substring(first, last+1);
   // Remove // comments
   s=s.replace(/\/\/[^\n\r]*/g,'');
@@ -1543,7 +1543,7 @@ async function callAnthropic(key,prompt){
   const r=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2048,messages:[{role:'user',content:prompt}]})
   });
   const d=await r.json();
   if(d.error) throw new Error(d.error.message);
@@ -1554,7 +1554,7 @@ async function callOpenAI(key,prompt){
   const r=await fetch('https://api.openai.com/v1/chat/completions',{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body:JSON.stringify({model:'gpt-4o',max_tokens:1500,messages:[{role:'user',content:prompt}]})
+    body:JSON.stringify({model:'gpt-4o',max_tokens:2048,messages:[{role:'user',content:prompt}]})
   });
   const d=await r.json();
   if(d.error) throw new Error(d.error.message);
@@ -1567,7 +1567,7 @@ async function callGemini(key,prompt){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       contents:[{parts:[{text:prompt}]}],
-      generationConfig:{maxOutputTokens:1500, responseMimeType:'application/json'}
+      generationConfig:{maxOutputTokens:2048, responseMimeType:'application/json'}
     })
   });
   const d=await r.json();
