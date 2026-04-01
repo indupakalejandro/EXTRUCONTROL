@@ -816,6 +816,22 @@ async function guardarRegistro(){
   if(!extSel){snack('⚠ Seleccioná la extrusora.');return;}
   if(!gv('r-material')){snack('⚠ Seleccioná el material.');return;}
   if(!gn('r-ancho')){snack('⚠ Ingresá el ancho.');return;}
+
+  // Warn if critical measurement fields are zero — likely forgotten, not real zeros
+  const camposVacios=[];
+  if(!gn('r-hz'))   camposVacios.push('Velocidad motor (Hz)');
+  if(!gn('r-nm'))   camposVacios.push('N·m');
+  if(!gn('r-amp'))  camposVacios.push('Amp');
+  if(!gn('r-caudal')) camposVacios.push('Caudal (kg/h)');
+  if(camposVacios.length){
+    const continuar = confirm(
+      '⚠ Los siguientes campos están en 0 o vacíos:\n\n' +
+      camposVacios.map(c=>'  • '+c).join('\n') +
+      '\n\n¿Son realmente cero o te olvidaste de cargarlos?\n\nPresioná Aceptar para guardar igual, o Cancelar para completarlos.'
+    );
+    if(!continuar) return;
+  }
+
   const rec={
     id:Date.now(), fecha:gv('r-fecha'), hora:gv('r-hora'),
     tempClima:gn('r-clima'), extrusora:extSel,
@@ -1340,10 +1356,12 @@ function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
   // 5. MATERIAL PATTERNS (from full db)
   const matRecs = mat ? db.filter(r=>r.material===mat) : db.slice();  // already extrusora-filtered
   const matStats = matRecs.length ? {
-    avgHz: +(matRecs.reduce((s,r)=>s+r.velocidadHz,0)/matRecs.length).toFixed(1),
-    avgNm: +(matRecs.reduce((s,r)=>s+r.nm,0)/matRecs.length).toFixed(1),
-    avgTabMax: +(matRecs.reduce((s,r)=>s+r.tableroMax,0)/matRecs.length).toFixed(0),
-    avgMatMax: +(matRecs.reduce((s,r)=>s+r.matrizMax,0)/matRecs.length).toFixed(0),
+    avgHz:    +(matRecs.reduce((s,r)=>s+r.velocidadHz,0)/matRecs.length).toFixed(1),
+    avgNm:    +(matRecs.reduce((s,r)=>s+r.nm,0)/matRecs.length).toFixed(1),
+    avgTabMin:+(matRecs.filter(r=>r.tableroMin>0).reduce((s,r)=>s+r.tableroMin,0)/Math.max(1,matRecs.filter(r=>r.tableroMin>0).length)).toFixed(0),
+    avgTabMax:+(matRecs.filter(r=>r.tableroMax>0).reduce((s,r)=>s+r.tableroMax,0)/Math.max(1,matRecs.filter(r=>r.tableroMax>0).length)).toFixed(0),
+    avgMatMin:+(matRecs.filter(r=>r.matrizMin>0).reduce((s,r)=>s+r.matrizMin,0)/Math.max(1,matRecs.filter(r=>r.matrizMin>0).length)).toFixed(0),
+    avgMatMax:+(matRecs.filter(r=>r.matrizMax>0).reduce((s,r)=>s+r.matrizMax,0)/Math.max(1,matRecs.filter(r=>r.matrizMax>0).length)).toFixed(0),
     n: matRecs.length
   } : null;
 
@@ -1366,6 +1384,31 @@ function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
     material: matStats,
     meta: { totalRegistros: db.length, registrosSimilares: top20.length, tempConsulta: tempActual }
   };
+}
+
+// Calculate confidence from statistical evidence — not from AI guessing
+function calcConfianza(analysis){
+  const nSim   = analysis.meta.registrosSimilares;
+  const r2     = analysis.motorTren.r2Lin;
+  const hasMat = !!analysis.material && analysis.material.n >= 2;
+  const hasTemp= analysis.tempNm.n >= 4;
+  // Score: 0-100
+  let score = 0;
+  // Similar records
+  if(nSim >= 15) score += 40;
+  else if(nSim >= 6) score += 25;
+  else if(nSim >= 3) score += 12;
+  // Motor-tren regression quality
+  if(r2 >= 0.80) score += 25;
+  else if(r2 >= 0.50) score += 15;
+  else if(r2 >= 0.20) score += 7;
+  // Material temperature history
+  if(hasMat) score += 20;
+  // Temperature-Nm correlation
+  if(hasTemp) score += 15;
+  if(score >= 70) return 'alta';
+  if(score >= 40) return 'media';
+  return 'baja';
 }
 
 // ══════════════════════════════════════════════
@@ -1403,8 +1446,8 @@ async function sugerirConIA(){
   // Temperature reference: ONLY from same material as consulted
   const matForTemps = mat || (analysis.topRegistros[0]?.mat || '');
   const matLine = analysis.material
-    ? `TEMPERATURAS_PARA_${matForTemps.toUpperCase().replace(/ /g,'_')}(usar_estas_NO_otras): tabMax=${analysis.material.avgTabMax}C tabMin=${analysis.material.avgTabMax-20}C matMax=${analysis.material.avgMatMax}C matMin=${analysis.material.avgMatMax-15}C (n=${analysis.material.n})`
-    : `sin_historial_de_temperaturas_para_${matForTemps}`;
+    ? `TEMPERATURAS_PARA_${matForTemps.toUpperCase().replace(/ /g,'_')}(usar_estas_NO_otras): tabMin=${analysis.material.avgTabMin}C tabMax=${analysis.material.avgTabMax}C matMin=${analysis.material.avgMatMin}C matMax=${analysis.material.avgMatMax}C (promedio_de_${analysis.material.n}_registros_reales)`
+    : `sin_historial_de_temperaturas_para_${matForTemps}_interpolar_desde_registros_similares`;
   const matWarning = mat ? '' : `ATENCION: no se especifico material — usar temperaturas del material mas frecuente en los registros similares (${analysis.topRegistros[0]?.mat||'desconocido'}), NO mezclar con otros materiales.`;
   const prompt=`Extrusora soplado film N°${extNum}. Solo JSON numericos sin texto.
 Registros similares Ext N°${extNum}: ${topStr}
@@ -1432,7 +1475,7 @@ Responde UNICAMENTE con este JSON reemplazando los ceros: {"ext":${extNum},"hz":
       nm_esperado:    raw.nm||(analysis.tempNm.nmPredActual||0),
       amp_esperado:   raw.amp||0,
       caudal_esperado:raw.caudal||0,
-      confianza: ['alta','media','baja'][((raw.conf||2)-1)]||'media'
+      confianza: calcConfianza(analysis)  // calculated from evidence, not AI opinion
     };
 
     const confColor={alta:'var(--green)',media:'var(--yellow)',baja:'var(--orange)'}[p.confianza]||'var(--text2)';
