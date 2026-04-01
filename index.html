@@ -372,7 +372,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
             <select id="r-material">
               <option value="">— seleccionar —</option>
               <option>Negro</option><option>Caramelo</option>
-              <option>Virgen común</option><option>Hielo</option><option>Termo</option>
+              <option>Virgen común</option><option>Hielo</option><option>Termo</option><option>Alta blanco</option>
             </select>
           </div>
           <div class="field"><label>Ancho <span class="u">mm</span></label><input type="number" id="r-ancho" placeholder="0"></div>
@@ -478,7 +478,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
         <select id="h-ext-f" onchange="renderHistorial()"><option value="">Ambas</option><option value="2">N°2</option><option value="3">N°3</option></select></div>
       <div class="field" style="margin:0;flex:1;min-width:100px"><label>Material</label>
         <select id="h-mat-f" onchange="renderHistorial()"><option value="">Todos</option>
-          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option></select></div>
+          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option><option>Alta blanco</option></select></div>
       <div class="field" style="margin:0;flex:1;min-width:90px"><label>Ancho ±5mm</label>
         <input type="number" id="h-ancho-f" placeholder="todos" onchange="renderHistorial()"></div>
       <button class="btn btn-ghost" onclick="resetFiltros()">Limpiar</button>
@@ -518,7 +518,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
       <div class="field"><label>Espesor objetivo <span class="u">µm</span></label><input type="number" id="c-espesor" placeholder="ej. 80"></div>
       <div class="field"><label>Material</label>
         <select id="c-mat"><option value="">— cualquiera —</option>
-          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option></select></div>
+          <option>Negro</option><option>Caramelo</option><option>Virgen común</option><option>Hielo</option><option>Termo</option><option>Alta blanco</option></select></div>
     </div>
     <div class="field" style="max-width:200px"><label>Extrusora</label>
       <select id="c-ext"><option value="">Cualquiera</option><option value="2">N°2</option><option value="3">N°3</option></select></div>
@@ -1308,8 +1308,9 @@ function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
   const hzAvg    = hzVals.length ? hzVals.reduce((a,b)=>a+b,0)/hzVals.length : 0;
   const hzMax    = hzVals.length ? Math.max(...hzVals) : 0;
   const hzP75    = hzVals.length>=4 ? [...hzVals].sort((a,b)=>a-b)[Math.floor(hzVals.length*0.75)] : hzMax;
-  // "Suggest the higher end": use P75 or max, not the average
-  const hzSugerido = +(hzP75 || hzAvg).toFixed(1);
+  // Use the MAX successful Hz for this machine+product combo (maximum production)
+  // Fall back to P75 if max is an outlier (>20% above P75), else use max
+  const hzSugerido = (hzMax && hzP75 && hzMax <= hzP75*1.20) ? +hzMax.toFixed(1) : +(hzP75||hzAvg).toFixed(1);
 
   // 3. MOTOR ↔ TREN relationship (Hz vs trenTiro)
   const motorTrenData = top20.filter(r=>r.velocidadHz>0&&r.trenTiro>0);
@@ -1397,12 +1398,21 @@ async function sugerirConIA(){
 
   // Prompt returns ONLY 12 numbers — never truncates
   const extNum = extB ? parseInt(extB) : (analysis.topRegistros[0]?.ext || 2);
-  const topStr = analysis.topRegistros.map(r=>`Hz:${r.hz} turb:${r.turb} tren:${r.tren} tabMin:${r.tabMin} tabMax:${r.tabMax} matMin:${r.matMin} matMax:${r.matMax} Nm:${r.nm} Amp:${r.amp} caudal:${r.caudal} clima:${r.clima}C`).join(' | ');
-  const matLine = analysis.material ? `mat_Hz=${analysis.material.avgHz} mat_tabMax=${analysis.material.avgTabMax} mat_matMax=${analysis.material.avgMatMax}` : '';
-  const prompt=`Extrusora soplado film N\u00b0${extNum}. Solo JSON numericos sin texto.
-Registros similares: ${topStr}
-Hz_P75=${analysis.hz.sugerido} Hz_avg=${analysis.hz.avg} tren_pred=${analysis.motorTren.trenPredecho??'null'} relMotTren=${analysis.motorTren.relacion} Nm_pred=${analysis.tempNm.nmPredActual} tempActual=${tempActual??'null'}C ${matLine}
-Reglas: hz usar ${analysis.hz.sugerido} (P75 no promedio). tren usar ${analysis.motorTren.trenPredecho??'interpolar'}. conf: 1=alta 2=media 3=baja.
+  // Only include records that match the requested material for temperature reference
+  const topStr = analysis.topRegistros.map(r=>`Hz:${r.hz} turb:${r.turb} tren:${r.tren} tabMin:${r.tabMin} tabMax:${r.tabMax} matMin:${r.matMin} matMax:${r.matMax} Nm:${r.nm} Amp:${r.amp} caudal:${r.caudal} clima:${r.clima}C mat:${r.mat}`).join(' | ');
+  // Temperature reference: ONLY from same material as consulted
+  const matForTemps = mat || (analysis.topRegistros[0]?.mat || '');
+  const matLine = analysis.material
+    ? `TEMPERATURAS_PARA_${matForTemps.toUpperCase().replace(/ /g,'_')}(usar_estas_NO_otras): tabMax=${analysis.material.avgTabMax}C tabMin=${analysis.material.avgTabMax-20}C matMax=${analysis.material.avgMatMax}C matMin=${analysis.material.avgMatMax-15}C (n=${analysis.material.n})`
+    : `sin_historial_de_temperaturas_para_${matForTemps}`;
+  const matWarning = mat ? '' : `ATENCION: no se especifico material — usar temperaturas del material mas frecuente en los registros similares (${analysis.topRegistros[0]?.mat||'desconocido'}), NO mezclar con otros materiales.`;
+  const prompt=`Extrusora soplado film N°${extNum}. Solo JSON numericos sin texto.
+Registros similares Ext N°${extNum}: ${topStr}
+Hz_MAX=${analysis.hz.sugerido} Hz_avg=${analysis.hz.avg} tren_pred=${analysis.motorTren.trenPredecho??'null'} relMotTren=${analysis.motorTren.relacion} Nm_pred=${analysis.tempNm.nmPredActual} tempActual=${tempActual??'null'}C
+${matLine}
+${matWarning}
+CRITICO: tabMin/tabMax/matMin/matMax deben corresponder UNICAMENTE al material "${matForTemps}" — NO usar temperaturas de otros materiales.
+Reglas: hz usar ${analysis.hz.sugerido} (maximo exitoso). tren usar ${analysis.motorTren.trenPredecho??'interpolar'}. conf: 1=alta 2=media 3=baja.
 Responde UNICAMENTE con este JSON reemplazando los ceros: {"ext":${extNum},"hz":0,"turb":0,"tren":0,"tabMin":0,"tabMax":0,"matMin":0,"matMax":0,"nm":0,"amp":0,"caudal":0,"conf":2}`;
 
   try{
