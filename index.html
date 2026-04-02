@@ -177,6 +177,77 @@ tr:hover td{background:rgba(255,255,255,.015)}
 #cfg-warning{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:13px 17px;margin-bottom:16px;font-size:11px;color:var(--yellow);line-height:1.7}
 #cfg-warning strong{font-family:var(--head);display:block;margin-bottom:3px}
 
+/* ── WIZARD REGISTRO ── */
+.wiz-wrap{max-width:560px;margin:0 auto;padding:8px 0}
+.wiz-progress{display:flex;gap:5px;margin-bottom:28px}
+.wiz-dot{flex:1;height:3px;border-radius:2px;background:var(--bg4);transition:background .3s}
+.wiz-dot.done{background:var(--accent)}
+.wiz-dot.active{background:var(--accent);opacity:.55}
+.wiz-back{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--rsm);padding:7px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;margin-bottom:20px;transition:all .15s}
+.wiz-back:hover{color:var(--text);border-color:var(--bd2)}
+.wiz-title{font-family:var(--head);font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
+.wiz-sub{font-size:12px;color:var(--text2);margin-bottom:24px}
+.wiz-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.wiz-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.wiz-big-btn{
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;
+  padding:24px 16px;cursor:pointer;text-align:center;transition:all .18s;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+.wiz-big-btn:hover{border-color:var(--bd2);background:var(--bg4)}
+.wiz-big-btn.sel{border-color:var(--accent);background:rgba(79,142,247,.1)}
+.wiz-big-btn.sel-2{border-color:var(--ext2);background:rgba(167,139,250,.1)}
+.wiz-big-btn.sel-3{border-color:var(--ext3);background:rgba(56,189,248,.1)}
+.wiz-big-btn .wb-num{font-family:var(--head);font-size:52px;font-weight:700;line-height:1}
+.wiz-big-btn .wb-lbl{font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
+.wiz-mat-btn{
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;
+  padding:18px 12px;cursor:pointer;text-align:center;transition:all .18s;
+  font-size:13px;font-weight:500;font-family:var(--head);
+}
+.wiz-mat-btn:hover{border-color:var(--bd2);background:var(--bg4)}
+.wiz-mat-btn.sel{border-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent)}
+/* NUMPAD */
+.wiz-fields{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.wiz-field-row{display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;
+  padding:12px 16px;cursor:pointer;transition:all .15s}
+.wiz-field-row.active{border-color:var(--accent);background:rgba(79,142,247,.07)}
+.wiz-field-row .wf-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+.wiz-field-row .wf-val{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--text)}
+.wiz-field-row .wf-val.empty{color:var(--text3)}
+.wiz-field-row .wf-unit{font-size:10px;color:var(--text3);margin-left:4px}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.np-btn{
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  padding:0;height:64px;font-family:var(--head);font-size:22px;font-weight:500;
+  cursor:pointer;transition:all .12s;color:var(--text);
+  display:flex;align-items:center;justify-content:center;
+}
+.np-btn:hover{background:var(--bg4);border-color:var(--bd2)}
+.np-btn:active{transform:scale(.95)}
+.np-btn.np-del{font-size:16px;color:var(--text2)}
+.np-btn.np-dot{font-size:24px}
+.np-btn.np-zero{grid-column:span 1}
+.wiz-display{
+  background:var(--bg3);border:1.5px solid var(--accent);border-radius:10px;
+  padding:14px 18px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;
+}
+.wiz-display .wd-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.wiz-display .wd-val{font-family:var(--mono);font-size:28px;font-weight:500;flex:1;text-align:right}
+.wiz-display .wd-unit{font-size:12px;color:var(--text3)}
+/* CONFIRM STEP */
+.wiz-confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.wiz-c-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px}
+.wiz-c-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px}
+.wiz-c-val{font-family:var(--mono);font-size:15px;font-weight:500}
+.wiz-next{width:100%;padding:16px;border-radius:12px;border:none;background:var(--accent);color:#fff;
+  font-family:var(--head);font-size:16px;font-weight:700;cursor:pointer;transition:all .15s;letter-spacing:-.2px}
+.wiz-next:hover{background:var(--acc2)}
+.wiz-next:disabled{opacity:.4;cursor:not-allowed}
+@keyframes wiz-in{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.wiz-step{animation:wiz-in .22s ease forwards}
+
 /* AI LOADING */
 .ai-loading{display:flex;align-items:center;gap:10px;padding:16px;color:var(--text2);font-size:12px}
 .ai-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c4b5fd;animation:dot-pulse 1.4s ease-in-out infinite}
@@ -338,84 +409,26 @@ tr:hover td{background:rgba(255,255,255,.015)}
   </div>
 </div>
 
-<!-- ══════════ REGISTRO ══════════ -->
+<!-- ══════════ REGISTRO (WIZARD) ══════════ -->
 <div id="page-registro" class="page active">
   <div id="cfg-warning" style="display:none">
     <strong>⚠ Configuración pendiente</strong>
     No configuraste la URL de Google Sheets. Los datos se guardan localmente hasta que la configures.
     <button class="btn btn-ghost" style="margin-top:6px;font-size:11px" onclick="showPage('config',document.querySelectorAll('nav button')[4])">Ir a Config →</button>
   </div>
-  <div class="page-hd"><h1>Nuevo registro</h1><p>Parámetros del turno actual.</p></div>
-
-  <div class="card" style="margin-bottom:12px">
-    <div class="card-title">Extrusora</div>
-    <div class="ext-sel">
-      <div class="ext-btn" id="ext-btn-2" onclick="selExtrusora(2)"><div class="num">2</div><div class="lbl">Extrusora N°2</div></div>
-      <div class="ext-btn" id="ext-btn-3" onclick="selExtrusora(3)"><div class="num">3</div><div class="lbl">Extrusora N°3</div></div>
-    </div>
-  </div>
-
-  <div class="g2">
-    <div>
-      <div class="card">
-        <div class="card-title">Identificación</div>
-        <div class="g2">
-          <div class="field"><label>Fecha</label><input type="date" id="r-fecha" readonly></div>
-          <div class="field"><label>Hora</label><input type="time" id="r-hora" readonly></div>
-        </div>
-        <div class="g2">
-          <div class="field"><label>Temp. clima <span class="u">°C — Junín BA</span></label><input type="number" id="r-clima" readonly></div>
-          <div class="field"><label>Condición</label><input type="text" id="r-clima-desc" readonly></div>
-        </div>
-        <div class="g2">
-          <div class="field"><label>Material</label>
-            <select id="r-material">
-              <option value="">— seleccionar —</option>
-              <option>Negro</option><option>Caramelo</option>
-              <option>Virgen común</option><option>Hielo</option><option>Termo</option><option>Alta blanco</option>
-            </select>
-          </div>
-          <div class="field"><label>Ancho <span class="u">mm</span></label><input type="number" id="r-ancho" placeholder="0"></div>
-        </div>
-        <div class="g2">
-          <div class="field"><label>Espesor <span class="u">µm</span></label><input type="number" id="r-espesor" placeholder="0"></div>
-          <div class="field"><label>Obs.</label><input type="text" id="r-obs" placeholder="nota"></div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Tablero y matriz (°C)</div>
-        <div class="g2">
-          <div class="field"><label>Tablero mín.</label><input type="number" id="r-tab-min" placeholder="0"></div>
-          <div class="field"><label>Tablero máx.</label><input type="number" id="r-tab-max" placeholder="0"></div>
-        </div>
-        <div class="g2">
-          <div class="field"><label>Matriz mín.</label><input type="number" id="r-mat-min" placeholder="0"></div>
-          <div class="field"><label>Matriz máx.</label><input type="number" id="r-mat-max" placeholder="0"></div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="card">
-        <div class="card-title">Motor, producción y tren</div>
-        <div class="g3">
-          <div class="field"><label>Velocidad <span class="u">Hz</span></label><input type="number" id="r-hz" step="0.1" placeholder="0"></div>
-          <div class="field"><label>N·m</label><input type="number" id="r-nm" step="0.1" placeholder="0"></div>
-          <div class="field"><label>Amp <span class="u">A</span></label><input type="number" id="r-amp" step="0.1" placeholder="0"></div>
-        </div>
-        <div class="g3">
-          <div class="field"><label>Caudal <span class="u">kg/h</span></label><input type="number" id="r-caudal" step="0.1" placeholder="0"></div>
-          <div class="field"><label>Turbina <span class="u">0–50</span></label><input type="number" id="r-turbina" min="0" max="50" step="0.5" placeholder="0"></div>
-          <div class="field"><label>Tren de tiro</label><input type="number" id="r-tren" step="0.1" placeholder="0"></div>
-        </div>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="clearForm()">Limpiar</button>
-        <button class="btn btn-primary" id="btn-guardar" onclick="guardarRegistro()">
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 14V2h9l3 3v9H2z" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="2" width="5" height="3.5" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="9" width="8" height="5" stroke="currentColor" stroke-width="1.3"/></svg>
-          Guardar en Google Sheets
-        </button>
-      </div>
-    </div>
+  <!-- Hidden inputs to keep compatibility with guardarRegistro -->
+  <input type="hidden" id="r-fecha"><input type="hidden" id="r-hora">
+  <input type="hidden" id="r-clima"><input type="hidden" id="r-clima-desc">
+  <input type="hidden" id="r-material"><input type="hidden" id="r-ancho">
+  <input type="hidden" id="r-espesor"><input type="hidden" id="r-tab-min">
+  <input type="hidden" id="r-tab-max"><input type="hidden" id="r-mat-min">
+  <input type="hidden" id="r-mat-max"><input type="hidden" id="r-hz">
+  <input type="hidden" id="r-nm"><input type="hidden" id="r-amp">
+  <input type="hidden" id="r-caudal"><input type="hidden" id="r-turbina">
+  <input type="hidden" id="r-tren"><input type="hidden" id="r-obs">
+  <div class="wiz-wrap">
+    <div class="wiz-progress" id="wiz-progress"></div>
+    <div id="wiz-container"></div>
   </div>
 </div>
 
@@ -786,64 +799,306 @@ function showPage(id,btn){
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(btn)btn.classList.add('active');
+  if(id==='registro')wizRender();
   if(id==='historial')renderHistorial();
   if(id==='filtro')renderFiltro();
   if(id==='config')loadConfigUI();
 }
 
 // ══════════════════════════════════════════════
-//  EXTRUSORA
+//  WIZARD REGISTRO
 // ══════════════════════════════════════════════
-let extSel=null;
-function selExtrusora(n){
-  extSel=n;
-  document.getElementById('ext-btn-2').className='ext-btn'+(n===2?' sel-2':'');
-  document.getElementById('ext-btn-3').className='ext-btn'+(n===3?' sel-3':'');
-}
+let extSel=null;  // keep for compatibility
+function selExtrusora(n){ extSel=n; }
 
-// ══════════════════════════════════════════════
-//  REGISTRO
-// ══════════════════════════════════════════════
+// Wizard state
+const WIZ_STEPS=['extrusora','material','dimensiones','temperaturas','motor','produccion','confirmar'];
+let wizStep=0;
+let wizData={extrusora:null,material:null,ancho:'',espesor:'',tabMin:'',tabMax:'',matMin:'',matMax:'',hz:'',nm:'',amp:'',caudal:'',turbina:'',tren:'',obs:''};
+let wizActiveField=null;
+let wizTyping='';
+
 function initDatetime(){
   const now=new Date(), pad=n=>String(n).padStart(2,'0');
   const fd=document.getElementById('r-fecha'); if(fd)fd.value=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
   const fh=document.getElementById('r-hora');  if(fh)fh.value=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
 }
 
-async function guardarRegistro(){
-  const gv=id=>document.getElementById(id)?.value.trim()||'';
-  const gn=id=>parseFloat(document.getElementById(id)?.value)||0;
-  if(!extSel){snack('⚠ Seleccioná la extrusora.');return;}
-  if(!gv('r-material')){snack('⚠ Seleccioná el material.');return;}
-  if(!gn('r-ancho')){snack('⚠ Ingresá el ancho.');return;}
+function wizRender(){
+  // Update progress dots
+  const prog=document.getElementById('wiz-progress');
+  if(prog) prog.innerHTML=WIZ_STEPS.map((_,i)=>`<div class="wiz-dot ${i<wizStep?'done':i===wizStep?'active':''}"></div>`).join('');
+  const cont=document.getElementById('wiz-container');
+  if(!cont)return;
+  const step=WIZ_STEPS[wizStep];
+  const backBtn=wizStep>0?`<button class="wiz-back" onclick="wizBack()">← Atrás</button>`:'';
 
-  // Warn if critical measurement fields are zero — likely forgotten, not real zeros
+  if(step==='extrusora'){
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">¿Qué extrusora?</div>
+      <div class="wiz-sub">Seleccioná la máquina del turno actual</div>
+      <div class="wiz-grid2">
+        <div class="wiz-big-btn ${wizData.extrusora===2?'sel-2':''}" onclick="wizSelExt(2)">
+          <div class="wb-num" style="color:var(--ext2)">2</div>
+          <div class="wb-lbl">Extrusora N°2</div>
+        </div>
+        <div class="wiz-big-btn ${wizData.extrusora===3?'sel-3':''}" onclick="wizSelExt(3)">
+          <div class="wb-num" style="color:var(--ext3)">3</div>
+          <div class="wb-lbl">Extrusora N°3</div>
+        </div>
+      </div>
+    </div>`;
+  }
+  else if(step==='material'){
+    const mats=['Negro','Caramelo','Virgen común','Hielo','Termo','Alta blanco'];
+    const matColors={Negro:'#888',Caramelo:'#d4a76a',Virgen:'#e0e0e0',Hielo:'#a0d4f5',Termo:'#f5a0a0','Alta blanco':'#f0f0f0'};
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Material</div>
+      <div class="wiz-sub">¿Qué material estás procesando?</div>
+      <div class="wiz-grid2">
+        ${mats.map(m=>`<div class="wiz-mat-btn ${wizData.material===m?'sel':''}" onclick="wizSelMat('${m}')">${m}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+  else if(step==='dimensiones'){
+    const fields=[{key:'ancho',lbl:'Ancho',unit:'mm'},{key:'espesor',lbl:'Espesor',unit:'µm'}];
+    if(!wizActiveField) wizActiveField='ancho';
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Dimensiones del film</div>
+      <div class="wiz-sub">Tocá un campo y usá el teclado</div>
+      ${wizNumpadHTML(fields)}
+      <button class="wiz-next" onclick="wizNextFromNumpad(['ancho','espesor'])" ${!wizData.ancho?'disabled':''}>Continuar →</button>
+    </div>`;
+    wizTyping=wizData[wizActiveField]||'';
+    wizUpdateDisplay();
+  }
+  else if(step==='temperaturas'){
+    const fields=[{key:'tabMin',lbl:'Tablero mín.',unit:'°C'},{key:'tabMax',lbl:'Tablero máx.',unit:'°C'},{key:'matMin',lbl:'Matriz mín.',unit:'°C'},{key:'matMax',lbl:'Matriz máx.',unit:'°C'}];
+    if(!wizActiveField||!fields.find(f=>f.key===wizActiveField)) wizActiveField='tabMin';
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Temperaturas</div>
+      <div class="wiz-sub">Tablero y matriz (°C)</div>
+      ${wizNumpadHTML(fields)}
+      <button class="wiz-next" onclick="wizNextFromNumpad(['tabMin','tabMax','matMin','matMax'])">Continuar →</button>
+    </div>`;
+    wizTyping=wizData[wizActiveField]||'';
+    wizUpdateDisplay();
+  }
+  else if(step==='motor'){
+    const fields=[{key:'hz',lbl:'Velocidad motor',unit:'Hz'},{key:'nm',lbl:'N·m',unit:'N·m'},{key:'amp',lbl:'Amperaje',unit:'A'}];
+    if(!wizActiveField||!fields.find(f=>f.key===wizActiveField)) wizActiveField='hz';
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Motor</div>
+      <div class="wiz-sub">Velocidad, torque y corriente</div>
+      ${wizNumpadHTML(fields)}
+      <button class="wiz-next" onclick="wizNextFromNumpad(['hz','nm','amp'])" ${!wizData.hz?'disabled':''}>Continuar →</button>
+    </div>`;
+    wizTyping=wizData[wizActiveField]||'';
+    wizUpdateDisplay();
+  }
+  else if(step==='produccion'){
+    const fields=[{key:'caudal',lbl:'Caudal',unit:'kg/h'},{key:'turbina',lbl:'Turbina',unit:'/50'},{key:'tren',lbl:'Tren de tiro',unit:''}];
+    if(!wizActiveField||!fields.find(f=>f.key===wizActiveField)) wizActiveField='caudal';
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Producción</div>
+      <div class="wiz-sub">Caudal, turbina y tren</div>
+      ${wizNumpadHTML(fields)}
+      <button class="wiz-next" onclick="wizNextFromNumpad(['caudal','turbina','tren'])">Continuar →</button>
+    </div>`;
+    wizTyping=wizData[wizActiveField]||'';
+    wizUpdateDisplay();
+  }
+  else if(step==='confirmar'){
+    const extColor=wizData.extrusora===2?'var(--ext2)':'var(--ext3)';
+    cont.innerHTML=`<div class="wiz-step">
+      ${backBtn}
+      <div class="wiz-title">Confirmar registro</div>
+      <div class="wiz-sub" id="wiz-clima-line">🌡 Clima actual: cargando...</div>
+      <div class="wiz-confirm-grid">
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Extrusora</div><div class="wiz-c-val" style="color:${extColor}">N°${wizData.extrusora}</div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Material</div><div class="wiz-c-val">${wizData.material}</div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Ancho</div><div class="wiz-c-val">${wizData.ancho} <span style="font-size:10px;color:var(--text3)">mm</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Espesor</div><div class="wiz-c-val">${wizData.espesor||'—'} <span style="font-size:10px;color:var(--text3)">µm</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Tablero</div><div class="wiz-c-val">${wizData.tabMin}–${wizData.tabMax} <span style="font-size:10px;color:var(--text3)">°C</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Matriz</div><div class="wiz-c-val">${wizData.matMin}–${wizData.matMax} <span style="font-size:10px;color:var(--text3)">°C</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Hz motor</div><div class="wiz-c-val">${wizData.hz}</div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">N·m</div><div class="wiz-c-val">${wizData.nm||'—'}</div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Amp</div><div class="wiz-c-val">${wizData.amp||'—'} <span style="font-size:10px;color:var(--text3)">A</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Caudal</div><div class="wiz-c-val">${wizData.caudal||'—'} <span style="font-size:10px;color:var(--text3)">kg/h</span></div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Turbina</div><div class="wiz-c-val">${wizData.turbina||'—'}</div></div>
+        <div class="wiz-c-item"><div class="wiz-c-lbl">Tren de tiro</div><div class="wiz-c-val">${wizData.tren||'—'}</div></div>
+      </div>
+      <button class="wiz-next" id="btn-guardar" onclick="guardarRegistro()">
+        💾 Guardar en Google Sheets
+      </button>
+    </div>`;
+    // Show climate
+    const cl=document.getElementById('wiz-clima-line');
+    if(cl&&climaActual) cl.textContent=`🌡 ${climaActual.temp}°C — ${climaActual.desc} · ${new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}`;
+  }
+}
+
+function wizNumpadHTML(fields){
+  const rows=fields.map(f=>`
+    <div class="wiz-field-row ${wizActiveField===f.key?'active':''}" onclick="wizSetField('${f.key}','${f.lbl}','${f.unit}')">
+      <div><div class="wf-lbl">${f.lbl}</div></div>
+      <div style="display:flex;align-items:baseline;gap:4px">
+        <span class="wf-val ${!wizData[f.key]?'empty':''}">${wizData[f.key]||'—'}</span>
+        <span class="wf-unit">${f.unit}</span>
+      </div>
+    </div>`).join('');
+
+  return `<div class="wiz-fields">${rows}</div>
+  <div class="wiz-display" id="wiz-disp">
+    <span class="wd-lbl" id="wiz-disp-lbl">${fields.find(f=>f.key===wizActiveField)?.lbl||''}</span>
+    <span class="wd-val" id="wiz-disp-val">${wizTyping||'0'}</span>
+    <span class="wd-unit" id="wiz-disp-unit">${fields.find(f=>f.key===wizActiveField)?.unit||''}</span>
+  </div>
+  <div class="numpad">
+    ${[7,8,9,4,5,6,1,2,3].map(n=>`<button class="np-btn" onclick="wizType('${n}')">${n}</button>`).join('')}
+    <button class="np-btn np-dot" onclick="wizType('.')">.</button>
+    <button class="np-btn" onclick="wizType('0')">0</button>
+    <button class="np-btn np-del" onclick="wizDel()">⌫</button>
+  </div>`;
+}
+
+function wizSetField(key, lbl, unit){
+  // Save current typing to previous field
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
+  wizActiveField=key;
+  wizTyping=wizData[key]||'';
+  // Update just the display without full re-render
+  document.querySelectorAll('.wiz-field-row').forEach(el=>el.classList.remove('active'));
+  event?.currentTarget?.classList.add('active');
+  wizUpdateDisplay();
+  // Update label/unit in display
+  document.getElementById('wiz-disp-lbl').textContent=lbl;
+  document.getElementById('wiz-disp-unit').textContent=unit;
+  // Refresh field values shown
+  document.querySelectorAll('.wf-val').forEach((el,i)=>{
+    const fieldEls=document.querySelectorAll('.wiz-field-row');
+    // handled via full refresh on type
+  });
+}
+
+function wizUpdateDisplay(){
+  const disp=document.getElementById('wiz-disp-val');
+  if(disp) disp.textContent=wizTyping||'0';
+}
+
+function wizType(ch){
+  if(ch==='.'&&wizTyping.includes('.'))return;
+  if(wizTyping==='0'&&ch!=='.')wizTyping='';
+  wizTyping+=ch;
+  wizUpdateDisplay();
+  // Update the field row value live
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
+  const rows=document.querySelectorAll('.wiz-field-row');
+  rows.forEach(row=>{
+    const key=row.getAttribute('onclick')?.match(/wizSetField\('([^']+)'/)?.[1];
+    if(key){
+      const valEl=row.querySelector('.wf-val');
+      if(valEl){valEl.textContent=wizData[key]||'—';valEl.className='wf-val'+(wizData[key]?'':' empty');}
+    }
+  });
+  // Re-evaluate next button
+  const nb=document.querySelector('.wiz-next');
+  if(nb&&nb.hasAttribute('disabled')&&wizTyping) nb.removeAttribute('disabled');
+}
+
+function wizDel(){
+  wizTyping=wizTyping.slice(0,-1);
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
+  wizUpdateDisplay();
+  const rows=document.querySelectorAll('.wiz-field-row');
+  rows.forEach(row=>{
+    const key=row.getAttribute('onclick')?.match(/wizSetField\('([^']+)'/)?.[1];
+    if(key){
+      const valEl=row.querySelector('.wf-val');
+      if(valEl){valEl.textContent=wizData[key]||'—';valEl.className='wf-val'+(wizData[key]?'':' empty');}
+    }
+  });
+}
+
+function wizSelExt(n){
+  wizData.extrusora=n; extSel=n;
+  setTimeout(()=>{wizStep=1;wizActiveField=null;wizRender();},180);
+}
+
+function wizSelMat(m){
+  wizData.material=m;
+  setTimeout(()=>{wizStep=2;wizActiveField=null;wizRender();},180);
+}
+
+function wizNextFromNumpad(fieldKeys){
+  // Save current typing
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
+  wizStep++;
+  wizActiveField=null;
+  wizTyping='';
+  wizRender();
+}
+
+function wizBack(){
+  wizStep=Math.max(0,wizStep-1);
+  wizActiveField=null;
+  wizTyping='';
+  wizRender();
+}
+
+function clearForm(){
+  wizStep=0;wizActiveField=null;wizTyping='';
+  wizData={extrusora:null,material:null,ancho:'',espesor:'',tabMin:'',tabMax:'',matMin:'',matMax:'',hz:'',nm:'',amp:'',caudal:'',turbina:'',tren:'',obs:''};
+  extSel=null;
+  initDatetime();
+  wizRender();
+}
+
+async function guardarRegistro(){
+  const gn=k=>parseFloat(wizData[k])||0;
+  // Validate required fields
+  if(!wizData.extrusora){snack('⚠ Seleccioná la extrusora.');wizStep=0;wizRender();return;}
+  if(!wizData.material){snack('⚠ Seleccioná el material.');wizStep=1;wizRender();return;}
+  if(!gn('ancho')){snack('⚠ Ingresá el ancho.');wizStep=2;wizRender();return;}
+
+  // Warn if critical measurement fields are zero
   const camposVacios=[];
-  if(!gn('r-hz'))   camposVacios.push('Velocidad motor (Hz)');
-  if(!gn('r-nm'))   camposVacios.push('N·m');
-  if(!gn('r-amp'))  camposVacios.push('Amp');
-  if(!gn('r-caudal')) camposVacios.push('Caudal (kg/h)');
+  if(!gn('hz'))     camposVacios.push('Velocidad motor (Hz)');
+  if(!gn('nm'))     camposVacios.push('N·m');
+  if(!gn('amp'))    camposVacios.push('Amp');
+  if(!gn('caudal')) camposVacios.push('Caudal (kg/h)');
   if(camposVacios.length){
-    const continuar = confirm(
-      '⚠ Los siguientes campos están en 0 o vacíos:\n\n' +
-      camposVacios.map(c=>'  • '+c).join('\n') +
-      '\n\n¿Son realmente cero o te olvidaste de cargarlos?\n\nPresioná Aceptar para guardar igual, o Cancelar para completarlos.'
+    const continuar=confirm(
+      '⚠ Los siguientes campos están en 0 o vacíos:\n\n'+
+      camposVacios.map(c=>'  • '+c).join('\n')+
+      '\n\n¿Son realmente cero o te olvidaste de cargarlos?\n\nAceptar = guardar igual. Cancelar = volver a completar.'
     );
-    if(!continuar) return;
+    if(!continuar){wizStep=4;wizRender();return;}
   }
 
+  const now=new Date(), pad=n=>String(n).padStart(2,'0');
+  const fecha=`${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  const hora=`${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
   const rec={
-    id:Date.now(), fecha:gv('r-fecha'), hora:gv('r-hora'),
-    tempClima:gn('r-clima'), extrusora:extSel,
-    tableroMin:gn('r-tab-min'), tableroMax:gn('r-tab-max'),
-    matrizMin:gn('r-mat-min'),  matrizMax:gn('r-mat-max'),
-    velocidadHz:gn('r-hz'), nm:gn('r-nm'), amp:gn('r-amp'),
-    caudal:gn('r-caudal'), turbina:gn('r-turbina'), trenTiro:gn('r-tren'),
-    ancho:gn('r-ancho'), espesor:gn('r-espesor'),
-    material:gv('r-material'), obs:gv('r-obs')
+    id:Date.now(), fecha, hora,
+    tempClima:climaActual?.temp||0, extrusora:wizData.extrusora,
+    tableroMin:gn('tabMin'), tableroMax:gn('tabMax'),
+    matrizMin:gn('matMin'),  matrizMax:gn('matMax'),
+    velocidadHz:gn('hz'), nm:gn('nm'), amp:gn('amp'),
+    caudal:gn('caudal'), turbina:gn('turbina'), trenTiro:gn('tren'),
+    ancho:gn('ancho'), espesor:gn('espesor'),
+    material:wizData.material, obs:wizData.obs||''
   };
+
   const btn=document.getElementById('btn-guardar');
-  btn.textContent='Guardando...';btn.disabled=true;
+  if(btn){btn.textContent='Guardando...';btn.disabled=true;}
   try{
     const cfg=getCfg();
     if(cfg.url){await apiCall('guardar',rec);snack('✓ Guardado en Google Sheets.');}
@@ -851,9 +1106,10 @@ async function guardarRegistro(){
     if(_cache)_cache.push(rec);
     lastEntryTime=Date.now();
     clearForm();
-  }catch(e){snack('✗ Error: '+e.message);}
-  btn.innerHTML=`<svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M2 14V2h9l3 3v9H2z" stroke="currentColor" stroke-width="1.3"/><rect x="5" y="2" width="5" height="3.5" stroke="currentColor" stroke-width="1.3"/><rect x="4" y="9" width="8" height="5" stroke="currentColor" stroke-width="1.3"/></svg> Guardar en Google Sheets`;
-  btn.disabled=false;
+  }catch(e){
+    snack('✗ Error: '+e.message);
+    if(btn){btn.textContent='💾 Guardar en Google Sheets';btn.disabled=false;}
+  }
 }
 
 function clearForm(){
@@ -1801,6 +2057,7 @@ async function init(){
     const d=new Date(last.fecha+' '+last.hora);
     if(!isNaN(d)) lastEntryTime=d.getTime();
   }
+  wizRender();
   setInterval(initDatetime,60000);
   setInterval(fetchClima,15*60*1000);
   setInterval(checkAlarms,60*1000);
