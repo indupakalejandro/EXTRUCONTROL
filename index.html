@@ -183,7 +183,7 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .wiz-dot{flex:1;height:3px;border-radius:2px;background:var(--bg4);transition:background .3s}
 .wiz-dot.done{background:var(--accent)}
 .wiz-dot.active{background:var(--accent);opacity:.55}
-.wiz-back{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--rsm);padding:7px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;margin-bottom:20px;transition:all .15s}
+.wiz-back{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);color:var(--text2);border-radius:var(--rsm);padding:7px 14px;cursor:pointer;font-family:var(--mono);font-size:12px;margin-bottom:20px;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .wiz-back:hover{color:var(--text);border-color:var(--bd2)}
 .wiz-title{font-family:var(--head);font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
 .wiz-sub{font-size:12px;color:var(--text2);margin-bottom:24px}
@@ -191,8 +191,9 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .wiz-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
 .wiz-big-btn{
   background:var(--bg3);border:1.5px solid var(--border);border-radius:14px;
-  padding:24px 16px;cursor:pointer;text-align:center;transition:all .18s;
+  padding:24px 16px;cursor:pointer;text-align:center;
   display:flex;flex-direction:column;align-items:center;gap:8px;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .wiz-big-btn:hover{border-color:var(--bd2);background:var(--bg4)}
 .wiz-big-btn.sel{border-color:var(--accent);background:rgba(79,142,247,.1)}
@@ -202,8 +203,9 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .wiz-big-btn .wb-lbl{font-size:11px;color:var(--text2);letter-spacing:.5px;text-transform:uppercase}
 .wiz-mat-btn{
   background:var(--bg3);border:1.5px solid var(--border);border-radius:12px;
-  padding:18px 12px;cursor:pointer;text-align:center;transition:all .18s;
+  padding:18px 12px;cursor:pointer;text-align:center;
   font-size:13px;font-weight:500;font-family:var(--head);
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;user-select:none;
 }
 .wiz-mat-btn:hover{border-color:var(--bd2);background:var(--bg4)}
 .wiz-mat-btn.sel{border-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent)}
@@ -217,18 +219,23 @@ tr:hover td{background:rgba(255,255,255,.015)}
 .wiz-field-row .wf-val{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--text)}
 .wiz-field-row .wf-val.empty{color:var(--text3)}
 .wiz-field-row .wf-unit{font-size:10px;color:var(--text3);margin-left:4px}
-.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr) 52px;gap:7px;margin-bottom:20px;touch-action:manipulation}
 .np-btn{
   background:var(--bg3);border:1px solid var(--border);border-radius:10px;
-  padding:0;height:64px;font-family:var(--head);font-size:22px;font-weight:500;
-  cursor:pointer;transition:all .12s;color:var(--text);
+  padding:0;height:60px;font-family:var(--head);font-size:22px;font-weight:500;
+  cursor:pointer;color:var(--text);
   display:flex;align-items:center;justify-content:center;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  user-select:none;-webkit-user-select:none;
 }
-.np-btn:hover{background:var(--bg4);border-color:var(--bd2)}
-.np-btn:active{transform:scale(.95)}
+.np-btn:active{background:var(--bg4);transform:scale(.94)}
 .np-btn.np-del{font-size:16px;color:var(--text2)}
-.np-btn.np-dot{font-size:24px}
-.np-btn.np-zero{grid-column:span 1}
+.np-btn.np-nav{background:var(--bg4);border-color:var(--bd2);font-size:18px;color:var(--text2)}
+.np-btn.np-nav:active{background:rgba(79,142,247,.15);color:var(--accent)}
+.np-btn.np-ok{background:var(--accent);border-color:var(--accent);color:#fff;font-size:16px;font-weight:700}
+.np-btn.np-ok:active{background:var(--acc2)}
+.np-btn.np-last-row{grid-column:span 1}
+.np-row-last{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;grid-column:span 3;margin-bottom:0}
 .wiz-display{
   background:var(--bg3);border:1.5px solid var(--accent);border-radius:10px;
   padding:14px 18px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;
@@ -858,7 +865,7 @@ function wizRender(){
       <div class="wiz-title">Material</div>
       <div class="wiz-sub">¿Qué material estás procesando?</div>
       <div class="wiz-grid2">
-        ${mats.map(m=>`<div class="wiz-mat-btn ${wizData.material===m?'sel':''}" onclick="wizSelMat('${m}')">${m}</div>`).join('')}
+        ${mats.map(m=>`<div class="wiz-mat-btn ${wizData.material===m?'sel':''}" onclick="wizSelMat('${m}',this)" ontouchstart="wizSelMat('${m}',this)">${m}</div>`).join('')}
       </div>
     </div>`;
   }
@@ -944,111 +951,145 @@ function wizRender(){
   }
 }
 
+// Current step's field list — set by wizNumpadHTML
+let _wizFields=[];
+
 function wizNumpadHTML(fields){
+  _wizFields=fields;
+  if(!wizActiveField||!fields.find(f=>f.key===wizActiveField)) wizActiveField=fields[0].key;
+  const activeF=fields.find(f=>f.key===wizActiveField)||fields[0];
+
   const rows=fields.map(f=>`
-    <div class="wiz-field-row ${wizActiveField===f.key?'active':''}" onclick="wizSetField('${f.key}','${f.lbl}','${f.unit}')">
+    <div class="wiz-field-row ${wizActiveField===f.key?'active':''}" id="wfr-${f.key}"
+      ontouchstart="wizSetField('${f.key}')" onclick="wizSetField('${f.key}')">
       <div><div class="wf-lbl">${f.lbl}</div></div>
       <div style="display:flex;align-items:baseline;gap:4px">
-        <span class="wf-val ${!wizData[f.key]?'empty':''}">${wizData[f.key]||'—'}</span>
+        <span class="wf-val ${!wizData[f.key]?'empty':''}" id="wfv-${f.key}">${wizData[f.key]||'—'}</span>
         <span class="wf-unit">${f.unit}</span>
       </div>
     </div>`).join('');
 
+  // 4-column numpad: digits | nav column (↑ ↓ OK)
+  const isLastField = fields[fields.length-1].key===wizActiveField;
   return `<div class="wiz-fields">${rows}</div>
   <div class="wiz-display" id="wiz-disp">
-    <span class="wd-lbl" id="wiz-disp-lbl">${fields.find(f=>f.key===wizActiveField)?.lbl||''}</span>
-    <span class="wd-val" id="wiz-disp-val">${wizTyping||'0'}</span>
-    <span class="wd-unit" id="wiz-disp-unit">${fields.find(f=>f.key===wizActiveField)?.unit||''}</span>
+    <span class="wd-lbl" id="wiz-disp-lbl">${activeF.lbl}</span>
+    <span class="wd-val" id="wiz-disp-val">${wizTyping||wizData[wizActiveField]||'0'}</span>
+    <span class="wd-unit" id="wiz-disp-unit">${activeF.unit}</span>
   </div>
   <div class="numpad">
-    ${[7,8,9,4,5,6,1,2,3].map(n=>`<button class="np-btn" onclick="wizType('${n}')">${n}</button>`).join('')}
-    <button class="np-btn np-dot" onclick="wizType('.')">.</button>
-    <button class="np-btn" onclick="wizType('0')">0</button>
-    <button class="np-btn np-del" onclick="wizDel()">⌫</button>
+    <button class="np-btn" ontouchstart="wizType('7')" onclick="wizType('7')">7</button>
+    <button class="np-btn" ontouchstart="wizType('8')" onclick="wizType('8')">8</button>
+    <button class="np-btn" ontouchstart="wizType('9')" onclick="wizType('9')">9</button>
+    <button class="np-btn np-nav" ontouchstart="wizNavField(-1)" onclick="wizNavField(-1)">↑</button>
+
+    <button class="np-btn" ontouchstart="wizType('4')" onclick="wizType('4')">4</button>
+    <button class="np-btn" ontouchstart="wizType('5')" onclick="wizType('5')">5</button>
+    <button class="np-btn" ontouchstart="wizType('6')" onclick="wizType('6')">6</button>
+    <button class="np-btn np-nav" ontouchstart="wizNavField(1)" onclick="wizNavField(1)">↓</button>
+
+    <button class="np-btn" ontouchstart="wizType('1')" onclick="wizType('1')">1</button>
+    <button class="np-btn" ontouchstart="wizType('2')" onclick="wizType('2')">2</button>
+    <button class="np-btn" ontouchstart="wizType('3')" onclick="wizType('3')">3</button>
+    <button class="np-btn np-ok" id="np-ok-btn"
+      ontouchstart="${isLastField?'wizNextFromNumpad()':'wizNavField(1)'}"
+      onclick="${isLastField?'wizNextFromNumpad()':'wizNavField(1)'}">
+      ${isLastField?'OK →':'→'}
+    </button>
+
+    <button class="np-btn" ontouchstart="wizType('.')" onclick="wizType('.')">.</button>
+    <button class="np-btn" ontouchstart="wizType('0')" onclick="wizType('0')">0</button>
+    <button class="np-btn np-del" ontouchstart="wizDel()" onclick="wizDel()">⌫</button>
+    <!-- empty cell in col 4 row 4 -->
+    <div></div>
   </div>`;
 }
 
-function wizSetField(key, lbl, unit){
-  // Save current typing to previous field
+function wizSetField(key){
+  if(wizActiveField===key) return;
+  // Save current value
   if(wizActiveField) wizData[wizActiveField]=wizTyping;
   wizActiveField=key;
   wizTyping=wizData[key]||'';
-  // Update just the display without full re-render
+  // Update active highlight without full re-render
   document.querySelectorAll('.wiz-field-row').forEach(el=>el.classList.remove('active'));
-  event?.currentTarget?.classList.add('active');
+  const row=document.getElementById('wfr-'+key);
+  if(row) row.classList.add('active');
+  // Update display
+  const f=_wizFields.find(f=>f.key===key);
+  const lbl=document.getElementById('wiz-disp-lbl');
+  const unit=document.getElementById('wiz-disp-unit');
+  if(lbl) lbl.textContent=f?.lbl||key;
+  if(unit) unit.textContent=f?.unit||'';
   wizUpdateDisplay();
-  // Update label/unit in display
-  document.getElementById('wiz-disp-lbl').textContent=lbl;
-  document.getElementById('wiz-disp-unit').textContent=unit;
-  // Refresh field values shown
-  document.querySelectorAll('.wf-val').forEach((el,i)=>{
-    const fieldEls=document.querySelectorAll('.wiz-field-row');
-    // handled via full refresh on type
-  });
+  // Update OK button label
+  const isLast=_wizFields[_wizFields.length-1].key===key;
+  const ok=document.getElementById('np-ok-btn');
+  if(ok){
+    ok.textContent=isLast?'OK →':'→';
+    ok.setAttribute('ontouchstart',isLast?'wizNextFromNumpad()':'wizNavField(1)');
+    ok.setAttribute('onclick',isLast?'wizNextFromNumpad()':'wizNavField(1)');
+  }
+}
+
+function wizNavField(dir){
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
+  const idx=_wizFields.findIndex(f=>f.key===wizActiveField);
+  const next=_wizFields[idx+dir];
+  if(next) wizSetField(next.key);
 }
 
 function wizUpdateDisplay(){
   const disp=document.getElementById('wiz-disp-val');
-  if(disp) disp.textContent=wizTyping||'0';
+  if(disp) disp.textContent=wizTyping||wizData[wizActiveField]||'0';
 }
 
 function wizType(ch){
   if(ch==='.'&&wizTyping.includes('.'))return;
   if(wizTyping==='0'&&ch!=='.')wizTyping='';
   wizTyping+=ch;
-  wizUpdateDisplay();
-  // Update the field row value live
   if(wizActiveField) wizData[wizActiveField]=wizTyping;
-  const rows=document.querySelectorAll('.wiz-field-row');
-  rows.forEach(row=>{
-    const key=row.getAttribute('onclick')?.match(/wizSetField\('([^']+)'/)?.[1];
-    if(key){
-      const valEl=row.querySelector('.wf-val');
-      if(valEl){valEl.textContent=wizData[key]||'—';valEl.className='wf-val'+(wizData[key]?'':' empty');}
-    }
-  });
-  // Re-evaluate next button
-  const nb=document.querySelector('.wiz-next');
-  if(nb&&nb.hasAttribute('disabled')&&wizTyping) nb.removeAttribute('disabled');
+  wizUpdateDisplay();
+  // Update just this field's value display
+  const valEl=document.getElementById('wfv-'+wizActiveField);
+  if(valEl){valEl.textContent=wizTyping||'—';valEl.className='wf-val';}
 }
 
 function wizDel(){
   wizTyping=wizTyping.slice(0,-1);
   if(wizActiveField) wizData[wizActiveField]=wizTyping;
   wizUpdateDisplay();
-  const rows=document.querySelectorAll('.wiz-field-row');
-  rows.forEach(row=>{
-    const key=row.getAttribute('onclick')?.match(/wizSetField\('([^']+)'/)?.[1];
-    if(key){
-      const valEl=row.querySelector('.wf-val');
-      if(valEl){valEl.textContent=wizData[key]||'—';valEl.className='wf-val'+(wizData[key]?'':' empty');}
-    }
-  });
+  const valEl=document.getElementById('wfv-'+wizActiveField);
+  if(valEl){valEl.textContent=wizTyping||'—';valEl.className='wf-val'+(wizTyping?'':' empty');}
 }
 
 function wizSelExt(n){
   wizData.extrusora=n; extSel=n;
-  setTimeout(()=>{wizStep=1;wizActiveField=null;wizRender();},180);
+  // Visual feedback then advance
+  const btn=document.querySelector(`.wiz-big-btn:nth-child(${n===2?1:2})`);
+  if(btn) btn.classList.add(n===2?'sel-2':'sel-3');
+  setTimeout(()=>{wizStep=1;_wizFields=[];wizActiveField=null;wizRender();},200);
 }
 
-function wizSelMat(m){
+function wizSelMat(m, el){
   wizData.material=m;
-  setTimeout(()=>{wizStep=2;wizActiveField=null;wizRender();},180);
+  document.querySelectorAll('.wiz-mat-btn').forEach(e=>e.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+  setTimeout(()=>{wizStep=2;_wizFields=[];wizActiveField=null;wizRender();},200);
 }
 
-function wizNextFromNumpad(fieldKeys){
-  // Save current typing
+function wizNextFromNumpad(){
+  // Save current field
   if(wizActiveField) wizData[wizActiveField]=wizTyping;
   wizStep++;
-  wizActiveField=null;
-  wizTyping='';
+  _wizFields=[];wizActiveField=null;wizTyping='';
   wizRender();
 }
 
 function wizBack(){
+  if(wizActiveField) wizData[wizActiveField]=wizTyping;
   wizStep=Math.max(0,wizStep-1);
-  wizActiveField=null;
-  wizTyping='';
+  _wizFields=[];wizActiveField=null;wizTyping='';
   wizRender();
 }
 
@@ -1097,19 +1138,25 @@ async function guardarRegistro(){
     material:wizData.material, obs:wizData.obs||''
   };
 
+  // Disable button immediately to prevent double-tap
   const btn=document.getElementById('btn-guardar');
   if(btn){btn.textContent='Guardando...';btn.disabled=true;}
+  let ok=false;
   try{
     const cfg=getCfg();
     if(cfg.url){await apiCall('guardar',rec);snack('✓ Guardado en Google Sheets.');}
     else{const l=getLocal();l.push(rec);saveLocal(l);snack('✓ Guardado localmente.');}
     if(_cache)_cache.push(rec);
     lastEntryTime=Date.now();
-    clearForm();
+    ok=true;
   }catch(e){
     snack('✗ Error: '+e.message);
-    if(btn){btn.textContent='💾 Guardar en Google Sheets';btn.disabled=false;}
+    // Restore button only if clearForm wasn't called yet
+    const b2=document.getElementById('btn-guardar');
+    if(b2){b2.textContent='💾 Guardar en Google Sheets';b2.disabled=false;}
   }
+  // clearForm resets the wizard DOM — do it after all btn operations
+  if(ok) clearForm();
 }
 
 function clearForm(){
