@@ -838,7 +838,7 @@ function wizRender(){
   const cont=document.getElementById('wiz-container');
   if(!cont)return;
   const step=WIZ_STEPS[wizStep];
-  const backBtn=wizStep>0?`<button class="wiz-back" onclick="wizBack()">← Atrás</button>`:'';
+  const backBtn=wizStep>0?`<button class="wiz-back" onclick="wizBack()" ontouchstart="event.preventDefault();wizBack()">← Atrás</button>`:'';
 
   if(step==='extrusora'){
     cont.innerHTML=`<div class="wiz-step">
@@ -846,11 +846,11 @@ function wizRender(){
       <div class="wiz-title">¿Qué extrusora?</div>
       <div class="wiz-sub">Seleccioná la máquina del turno actual</div>
       <div class="wiz-grid2">
-        <div class="wiz-big-btn ${wizData.extrusora===2?'sel-2':''}" onclick="wizSelExt(2)">
+        <div class="wiz-big-btn ${wizData.extrusora===2?'sel-2':''}" onclick="wizSelExt(2)" ontouchstart="event.preventDefault();wizSelExt(2)">
           <div class="wb-num" style="color:var(--ext2)">2</div>
           <div class="wb-lbl">Extrusora N°2</div>
         </div>
-        <div class="wiz-big-btn ${wizData.extrusora===3?'sel-3':''}" onclick="wizSelExt(3)">
+        <div class="wiz-big-btn ${wizData.extrusora===3?'sel-3':''}" onclick="wizSelExt(3)" ontouchstart="event.preventDefault();wizSelExt(3)">
           <div class="wb-num" style="color:var(--ext3)">3</div>
           <div class="wb-lbl">Extrusora N°3</div>
         </div>
@@ -865,7 +865,7 @@ function wizRender(){
       <div class="wiz-title">Material</div>
       <div class="wiz-sub">¿Qué material estás procesando?</div>
       <div class="wiz-grid2">
-        ${mats.map(m=>`<div class="wiz-mat-btn ${wizData.material===m?'sel':''}" onclick="wizSelMat('${m}',this)" ontouchstart="wizSelMat('${m}',this)">${m}</div>`).join('')}
+        ${mats.map(m=>`<div class="wiz-mat-btn ${wizData.material===m?'sel':''}" onclick="wizSelMat('${m}',this)" ontouchstart="event.preventDefault();wizSelMat('${m}',this)">${m}</div>`).join('')}
       </div>
     </div>`;
   }
@@ -877,7 +877,7 @@ function wizRender(){
       <div class="wiz-title">Dimensiones del film</div>
       <div class="wiz-sub">Tocá un campo y usá el teclado</div>
       ${wizNumpadHTML(fields)}
-      <button class="wiz-next" onclick="wizNextFromNumpad(['ancho','espesor'])" ${!wizData.ancho?'disabled':''}>Continuar →</button>
+      <button class="wiz-next" onclick="wizNextFromNumpad(['ancho','espesor'])" ontouchstart="event.preventDefault();wizNextFromNumpad()" ${!wizData.ancho?'disabled':''}>Continuar →</button>
     </div>`;
     wizTyping=wizData[wizActiveField]||'';
     wizUpdateDisplay();
@@ -890,7 +890,7 @@ function wizRender(){
       <div class="wiz-title">Temperaturas</div>
       <div class="wiz-sub">Tablero y matriz (°C)</div>
       ${wizNumpadHTML(fields)}
-      <button class="wiz-next" onclick="wizNextFromNumpad(['tabMin','tabMax','matMin','matMax'])">Continuar →</button>
+      <button class="wiz-next" onclick="wizNextFromNumpad(['tabMin','tabMax','matMin','matMax'])" ontouchstart="event.preventDefault();wizNextFromNumpad()">Continuar →</button>
     </div>`;
     wizTyping=wizData[wizActiveField]||'';
     wizUpdateDisplay();
@@ -903,7 +903,7 @@ function wizRender(){
       <div class="wiz-title">Motor</div>
       <div class="wiz-sub">Velocidad, torque y corriente</div>
       ${wizNumpadHTML(fields)}
-      <button class="wiz-next" onclick="wizNextFromNumpad(['hz','nm','amp'])" ${!wizData.hz?'disabled':''}>Continuar →</button>
+      <button class="wiz-next" onclick="wizNextFromNumpad(['hz','nm','amp'])" ontouchstart="event.preventDefault();wizNextFromNumpad()" ${!wizData.hz?'disabled':''}>Continuar →</button>
     </div>`;
     wizTyping=wizData[wizActiveField]||'';
     wizUpdateDisplay();
@@ -916,7 +916,7 @@ function wizRender(){
       <div class="wiz-title">Producción</div>
       <div class="wiz-sub">Caudal, turbina y tren</div>
       ${wizNumpadHTML(fields)}
-      <button class="wiz-next" onclick="wizNextFromNumpad(['caudal','turbina','tren'])">Continuar →</button>
+      <button class="wiz-next" onclick="wizNextFromNumpad(['caudal','turbina','tren'])" ontouchstart="event.preventDefault();wizNextFromNumpad()">Continuar →</button>
     </div>`;
     wizTyping=wizData[wizActiveField]||'';
     wizUpdateDisplay();
@@ -961,7 +961,7 @@ function wizNumpadHTML(fields){
 
   const rows=fields.map(f=>`
     <div class="wiz-field-row ${wizActiveField===f.key?'active':''}" id="wfr-${f.key}"
-      ontouchstart="wizSetField('${f.key}')" onclick="wizSetField('${f.key}')">
+      ontouchstart="event.preventDefault();wizSetField('${f.key}')" onclick="wizSetField('${f.key}')">
       <div><div class="wf-lbl">${f.lbl}</div></div>
       <div style="display:flex;align-items:baseline;gap:4px">
         <span class="wf-val ${!wizData[f.key]?'empty':''}" id="wfv-${f.key}">${wizData[f.key]||'—'}</span>
@@ -978,28 +978,28 @@ function wizNumpadHTML(fields){
     <span class="wd-unit" id="wiz-disp-unit">${activeF.unit}</span>
   </div>
   <div class="numpad">
-    <button class="np-btn" ontouchstart="wizType('7')" onclick="wizType('7')">7</button>
-    <button class="np-btn" ontouchstart="wizType('8')" onclick="wizType('8')">8</button>
-    <button class="np-btn" ontouchstart="wizType('9')" onclick="wizType('9')">9</button>
-    <button class="np-btn np-nav" ontouchstart="wizNavField(-1)" onclick="wizNavField(-1)">↑</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('7')" onclick="wizType('7')">7</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('8')" onclick="wizType('8')">8</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('9')" onclick="wizType('9')">9</button>
+    <button class="np-btn np-nav" ontouchstart="event.preventDefault();wizNavField(-1)" onclick="wizNavField(-1)">↑</button>
 
-    <button class="np-btn" ontouchstart="wizType('4')" onclick="wizType('4')">4</button>
-    <button class="np-btn" ontouchstart="wizType('5')" onclick="wizType('5')">5</button>
-    <button class="np-btn" ontouchstart="wizType('6')" onclick="wizType('6')">6</button>
-    <button class="np-btn np-nav" ontouchstart="wizNavField(1)" onclick="wizNavField(1)">↓</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('4')" onclick="wizType('4')">4</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('5')" onclick="wizType('5')">5</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('6')" onclick="wizType('6')">6</button>
+    <button class="np-btn np-nav" ontouchstart="event.preventDefault();wizNavField(1)" onclick="wizNavField(1)">↓</button>
 
-    <button class="np-btn" ontouchstart="wizType('1')" onclick="wizType('1')">1</button>
-    <button class="np-btn" ontouchstart="wizType('2')" onclick="wizType('2')">2</button>
-    <button class="np-btn" ontouchstart="wizType('3')" onclick="wizType('3')">3</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('1')" onclick="wizType('1')">1</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('2')" onclick="wizType('2')">2</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('3')" onclick="wizType('3')">3</button>
     <button class="np-btn np-ok" id="np-ok-btn"
-      ontouchstart="${isLastField?'wizNextFromNumpad()':'wizNavField(1)'}"
+      ontouchstart="event.preventDefault();${isLastField?'wizNextFromNumpad()':'wizNavField(1)'}"
       onclick="${isLastField?'wizNextFromNumpad()':'wizNavField(1)'}">
       ${isLastField?'OK →':'→'}
     </button>
 
-    <button class="np-btn" ontouchstart="wizType('.')" onclick="wizType('.')">.</button>
-    <button class="np-btn" ontouchstart="wizType('0')" onclick="wizType('0')">0</button>
-    <button class="np-btn np-del" ontouchstart="wizDel()" onclick="wizDel()">⌫</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('.')" onclick="wizType('.')">.</button>
+    <button class="np-btn" ontouchstart="event.preventDefault();wizType('0')" onclick="wizType('0')">0</button>
+    <button class="np-btn np-del" ontouchstart="event.preventDefault();wizDel()" onclick="wizDel()">⌫</button>
     <!-- empty cell in col 4 row 4 -->
     <div></div>
   </div>`;
@@ -1094,11 +1094,12 @@ function wizBack(){
 }
 
 function clearForm(){
-  wizStep=0;wizActiveField=null;wizTyping='';
+  wizStep=0;wizActiveField=null;wizTyping='';_wizFields=[];
   wizData={extrusora:null,material:null,ancho:'',espesor:'',tabMin:'',tabMax:'',matMin:'',matMax:'',hz:'',nm:'',amp:'',caudal:'',turbina:'',tren:'',obs:''};
   extSel=null;
   initDatetime();
-  wizRender();
+  // Use rAF to ensure DOM is clean before rendering
+  requestAnimationFrame(()=>wizRender());
 }
 
 async function guardarRegistro(){
