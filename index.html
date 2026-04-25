@@ -1632,21 +1632,78 @@ function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
   // Fall back to P75 if max is an outlier (>20% above P75), else use max
   const hzSugerido = (hzMax && hzP75 && hzMax <= hzP75*1.20) ? +hzMax.toFixed(1) : +(hzP75||hzAvg).toFixed(1);
 
-  // 3. MOTOR ↔ TREN relationship (Hz vs trenTiro)
-  const motorTrenData = top20.filter(r=>r.velocidadHz>0&&r.trenTiro>0);
-  const relMotorTren  = detectRelationship(
-    motorTrenData.map(r=>r.velocidadHz),
-    motorTrenData.map(r=>r.trenTiro)
+  // 3. TREN DE TIRO PREDICTION
+  // The tren depends primarily on film dimensions (ancho + espesor), not just Hz.
+  // Mixing records of different dimensions in a Hz→tren regression gives nonsense results.
+  // Strategy:
+  //   a) Tight-match records: same ancho ±8% AND espesor ±12% — these are directly comparable
+  //   b) Weighted average of their tren values (weight = similarity score)
+  //   c) If tight matches exist, also calculate Hz→tren regression WITHIN them for fine-tuning
+  //   d) Fallback: broader match with ancho ±15%, weighted average only
+
+  const tol_ancho = ancho * 0.08;
+  const tol_esp   = esp > 0 ? esp * 0.12 : Infinity;
+
+  const tightMatch = db.filter(r =>
+    r.trenTiro > 0 && r.velocidadHz > 0 &&
+    Math.abs(r.ancho - ancho) <= tol_ancho &&
+    (esp === 0 || Math.abs(r.espesor - esp) <= tol_esp)
   );
-  // Predict trenTiro for the suggested Hz
-  let trenPredict=null;
-  if(motorTrenData.length>=3 && relMotorTren.type==='lineal'){
-    const reg=linReg(motorTrenData.map(r=>r.velocidadHz),motorTrenData.map(r=>r.trenTiro));
-    trenPredict=+(reg.slope*hzSugerido+reg.intercept).toFixed(2);
-  } else if(motorTrenData.length>=3 && relMotorTren.type==='exponencial'){
-    const reg=linReg(motorTrenData.map(r=>r.velocidadHz),motorTrenData.map(r=>Math.log(r.trenTiro)));
-    trenPredict=+(Math.exp(reg.slope*hzSugerido+reg.intercept)).toFixed(2);
+
+  const broadMatch = tightMatch.length < 3
+    ? db.filter(r =>
+        r.trenTiro > 0 && r.velocidadHz > 0 &&
+        Math.abs(r.ancho - ancho) <= ancho * 0.15
+      )
+    : tightMatch;
+
+  const trenPool = (tightMatch.length >= 2 ? tightMatch : broadMatch)
+    .map(r => ({ ...r, _sim: similarityScore(r, ancho, esp, mat) }))
+    .sort((a, b) => b._sim - a._sim)
+    .slice(0, 10);
+
+  let trenPredict = null;
+  let relMotorTren = { type: 'insuficiente', r2Lin: 0, r2Exp: 0, n: 0 };
+
+  if (trenPool.length >= 1) {
+    // Weighted average of tren from similar-dimension records
+    const totalW = trenPool.reduce((s, r) => s + r._sim, 0);
+    const wavgTren = trenPool.reduce((s, r) => s + r.trenTiro * r._sim, 0) / totalW;
+
+    if (trenPool.length >= 4) {
+      // Within same-dimension records, check if Hz adds predictive power
+      const rel = detectRelationship(
+        trenPool.map(r => r.velocidadHz),
+        trenPool.map(r => r.trenTiro)
+      );
+      relMotorTren = { ...rel, n: trenPool.length };
+
+      if (rel.type === 'lineal' && rel.r2Lin > 0.50) {
+        // Hz is a good predictor within this dimension group — use regression
+        const reg = linReg(trenPool.map(r => r.velocidadHz), trenPool.map(r => r.trenTiro));
+        const regPred = reg.slope * hzSugerido + reg.intercept;
+        // Blend: 60% regression + 40% weighted avg for stability
+        trenPredict = +(regPred * 0.6 + wavgTren * 0.4).toFixed(2);
+      } else if (rel.type === 'exponencial' && rel.r2Exp > 0.50) {
+        const reg = linReg(trenPool.map(r => r.velocidadHz), trenPool.map(r => Math.log(r.trenTiro)));
+        const regPred = Math.exp(reg.slope * hzSugerido + reg.intercept);
+        trenPredict = +(regPred * 0.6 + wavgTren * 0.4).toFixed(2);
+      } else {
+        // Hz doesn't explain tren within this dimension group — use weighted avg
+        trenPredict = +wavgTren.toFixed(2);
+        relMotorTren.type = 'promedio_ponderado';
+      }
+    } else {
+      // Too few points for regression — use weighted average directly
+      trenPredict = +wavgTren.toFixed(2);
+      relMotorTren = { type: 'promedio_ponderado', r2Lin: 0, r2Exp: 0, n: trenPool.length };
+    }
   }
+
+  // Diagnostic: what pool was used
+  const trenPoolSource = tightMatch.length >= 2
+    ? `${tightMatch.length} reg. dimensión exacta (±8% ancho, ±12% esp)`
+    : `${broadMatch.length} reg. dimensión aproximada (±15% ancho) — pocos datos exactos`;
 
   // 4. TEMPERATURE → N·m correlation
   const tempNmData = top20.filter(r=>r.tempClima>0&&r.nm>0);
@@ -1683,7 +1740,7 @@ function buildAnalysis(dbRaw, ancho, esp, mat, extB, tempActual){
       clima:r.tempClima, fecha:r.fecha
     })),
     hz: { avg: +hzAvg.toFixed(1), max: hzMax, p75: hzP75, sugerido: hzSugerido, n: hzVals.length },
-    motorTren: { relacion: relMotorTren.type, r2Lin: relMotorTren.r2Lin, r2Exp: relMotorTren.r2Exp, trenPredecho: trenPredict, n: motorTrenData.length },
+    motorTren: { relacion: relMotorTren.type, r2Lin: relMotorTren.r2Lin, r2Exp: relMotorTren.r2Exp, trenPredecho: trenPredict, n: relMotorTren.n, fuente: trenPoolSource },
     tempNm: { slopeNmPorGrado: nmPerGrado, r2: corrTempNm.r2.toFixed(3), nmPredActual: nmPredTemp, n: tempNmData.length },
     material: matStats,
     meta: { totalRegistros: db.length, registrosSimilares: top20.length, tempConsulta: tempActual }
@@ -1755,7 +1812,7 @@ async function sugerirConIA(){
   const matWarning = mat ? '' : `ATENCION: no se especifico material — usar temperaturas del material mas frecuente en los registros similares (${analysis.topRegistros[0]?.mat||'desconocido'}), NO mezclar con otros materiales.`;
   const prompt=`Extrusora soplado film N°${extNum}. Solo JSON numericos sin texto.
 Registros similares Ext N°${extNum}: ${topStr}
-Hz_MAX=${analysis.hz.sugerido} Hz_avg=${analysis.hz.avg} tren_pred=${analysis.motorTren.trenPredecho??'null'} relMotTren=${analysis.motorTren.relacion} Nm_pred=${analysis.tempNm.nmPredActual} tempActual=${tempActual??'null'}C
+Hz_MAX=${analysis.hz.sugerido} Hz_avg=${analysis.hz.avg} tren_pred=${analysis.motorTren.trenPredecho??'null'} metodo_tren=${analysis.motorTren.relacion}(${analysis.motorTren.fuente}) Nm_pred=${analysis.tempNm.nmPredActual} tempActual=${tempActual??'null'}C
 ${matLine}
 ${matWarning}
 CRITICO: tabMin/tabMax/matMin/matMax deben corresponder UNICAMENTE al material "${matForTemps}" — NO usar temperaturas de otros materiales.
@@ -1793,9 +1850,13 @@ Responde UNICAMENTE con este JSON reemplazando los ceros: {"ext":${extNum},"hz":
     }];
 
     // Reasoning built from JS analysis — no AI text needed
-    const relTxt = analysis.motorTren.relacion!=='insuficiente'
-      ? `Relaci\u00f3n motor\u2194tren <strong>${analysis.motorTren.relacion}</strong> (R\u00b2=${analysis.motorTren.r2Lin}). Tren predicho para ${p.hz} Hz: ${p.trenTiro}.`
-      : 'Pocos datos para determinar la relaci\u00f3n motor\u2194tren \u2014 valor interpolado del historial.';
+    const metodoTren = analysis.motorTren.relacion;
+    const fuenteTren = analysis.motorTren.fuente || '';
+    const relTxt = metodoTren==='insuficiente'
+      ? 'Sin registros similares para estimar el tren de tiro &#8212; valor indicativo.'
+      : metodoTren==='promedio_ponderado'
+        ? `Tren calculado como promedio ponderado de ${analysis.motorTren.n} registros de dimensi&#243;n similar. ${fuenteTren}. El Hz no muestra correlaci&#243;n con el tren dentro de esta medida.`
+        : `Regresi&#243;n <strong>${metodoTren}</strong> (R&#178;=${analysis.motorTren.r2Lin}) dentro de registros de dimensi&#243;n similar. ${fuenteTren}. Tren predicho para ${p.hz} Hz: <strong>${p.trenTiro}</strong>.`;
     const tempTxt = analysis.tempNm.slopeNmPorGrado!=='no determinado'
       ? `Sensibilidad N\u00b7m: <strong>${analysis.tempNm.slopeNmPorGrado} N\u00b7m/\u00b0C</strong>. A ${tempActual??'?'}\u00b0C se esperan <strong>${p.nm_esperado} N\u00b7m</strong>.`
       : `N\u00b7m esperado basado en promedio del historial: ${p.nm_esperado} N\u00b7m.`;
